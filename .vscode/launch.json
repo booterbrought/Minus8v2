@@ -19,6 +19,16 @@
         "--allow-all"
       ],
       "attachSimplePort": 9229
+    },
+    {
+      "request": "launch",
+      "name": "Launch Frontend",
+      "type": "node",
+      "cwd": "${workspaceFolder}/frontend",
+      "env": {},
+      "runtimeExecutable": "vite",
+      "runtimeArgs": [
+      ]
     }
   ]
 }

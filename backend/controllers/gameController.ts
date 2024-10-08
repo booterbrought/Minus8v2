@@ -4,9 +4,7 @@ import { Game } from "../models/gameState.ts";
 export const gameList: Map<string, Game> = new Map();
 
 export const getGameState = (
-  ctx: RouterContext<"/game/:id", {
-    id: string;
-  } & Record<string | number, string | undefined>, Record<string, any>>
+  ctx: RouterContext<"/game/:id", { id: string }>,
 ) => {
   const gameId = ctx.params.id;
   const game = gameList.get(gameId);
@@ -21,13 +19,13 @@ export const getGameState = (
 };
 
 export const makeMove = async (
-  ctx: RouterContext<"/game/:id/move", {
-    id: string;
-  } & Record<string | number, string | undefined>, {
-    playerId: string;
-    row: number;
-    col: number;
-  }>
+  ctx: RouterContext< "/game/:id/move", { id: string; },
+    {
+      playerId: string;
+      row: number;
+      col: number;
+    }
+  >,
 ) => {
   const gameId = ctx.params.id;
   const game = gameList.get(gameId);
@@ -53,7 +51,7 @@ export const makeMove = async (
   }
 
   // Check if the cell has already been eaten
-  if (game.moves.some(move => move[0] === row && move[1] === col)) {
+  if (game.moves.some((move) => move[0] === row && move[1] === col)) {
     ctx.response.status = 400;
     ctx.response.body = { error: "Cell already eaten" };
     return;
