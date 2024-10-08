@@ -5,6 +5,7 @@
     "vitest.config.*",
     "cypress.config.*",
     "nightwatch.conf.*",
+    "vite.config.*",
     "playwright.config.*"
   ],
   "compilerOptions": {
