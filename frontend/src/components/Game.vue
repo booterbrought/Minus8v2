@@ -10,7 +10,6 @@
       </div>
     </div>
     <div v-if="game">
-      <p>Players: {{ playerNames }}</p>
       <p>Current Turn: {{ currentPlayerName }}</p>
       <div class="board">
         <div
@@ -34,8 +33,6 @@
           </div>
         </div>
       </div>
-      <p>Status: {{ game.status }}</p>
-      <p>Scores: {{ game.scores.join(' - ') }}</p>
     </div>
     <div v-else>
       <p>Loading game...</p>
@@ -200,13 +197,13 @@ const playerNames = computed(() => {
 const currentPlayerName = computed(() => {
   if (!game.value) return '';
   const currentPlayer = game.value.players[game.value.currentTurn];
-  return `${currentPlayer.name} (Player ${game.value.currentTurn + 1})`;
+  return currentPlayer.name;
 });
 
 onMounted(() => {
   fetchGameState();
   // Optionally, set up a polling mechanism to refresh game state
-  setInterval(fetchGameState, 5000);
+  setInterval(fetchGameState, 1000);
 });
 </script>
 
