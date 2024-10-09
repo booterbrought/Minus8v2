@@ -14,7 +14,7 @@
     </form>
     <p>
       Don't have an account?
-      <router-link to="/api/register">Register here</router-link>
+      <router-link to="/register">Register here</router-link>
     </p>
   </div>
 </template>
@@ -22,10 +22,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '../stores/userStore';
 
 const username = ref('');
 const password = ref('');
 const router = useRouter();
+const userStore = useUserStore();
 
 const handleLogin = async () => {
   try {
@@ -37,7 +39,8 @@ const handleLogin = async () => {
 
     if (response.ok) {
       const data = await response.json();
-      localStorage.setItem('token', data.token);
+      userStore.setToken(data.token);
+      userStore.setUsername(username.value);
       // Redirect to the game menu instead of a specific game
       router.push('/menu');
     } else {

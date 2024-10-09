@@ -19,7 +19,9 @@ export const getGameState = (
 };
 
 export const makeMove = async (
-  ctx: RouterContext< "/game/:id/move", { id: string; },
+  ctx: RouterContext<
+    "/game/:id/move",
+    { id: string },
     {
       playerId: string;
       row: number;
@@ -38,10 +40,29 @@ export const makeMove = async (
 
   const { playerId, row, col } = await ctx.request.body.json();
 
-  if (game.players[game.currentTurn] !== playerId) {
+  // Corrected comparison: Compare player IDs instead of Player object with string
+  if (game.players[game.currentTurn].id !== playerId) {
     ctx.response.status = 400;
     ctx.response.body = { error: "Not your turn" };
     return;
+  }
+
+  // Move Validity Check
+  const [currentRow, currentCol] = game.currentCell;
+  if (game.currentTurn === 0) {
+    // Player 1: Horizontal move (same row)
+    if (row !== currentRow) {
+      ctx.response.status = 400;
+      ctx.response.body = { error: "Invalid move: Player 1 must move horizontally" };
+      return;
+    }
+  } else {
+    // Player 2: Vertical move (same column)
+    if (col !== currentCol) {
+      ctx.response.status = 400;
+      ctx.response.body = { error: "Invalid move: Player 2 must move vertically" };
+      return;
+    }
   }
 
   if (row < 0 || row > 7 || col < 0 || col > 7 || game.board[row][col] === 0) {
@@ -63,6 +84,9 @@ export const makeMove = async (
   // Update the move logic here
   game.currentTurn = 1 - game.currentTurn;
   game.moves.push([row, col]);
+  
+  // Update currentCell
+  game.currentCell = [row, col];
 
   ctx.response.body = { success: true, scores: game.scores };
 };

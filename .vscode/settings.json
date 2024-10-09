@@ -1,3 +1,4 @@
 {
     "deno.enablePaths": ["backend"],
+    "deno.lint": false,
 }

@@ -1,16 +1,25 @@
 import { Context, RouterContext } from "https://deno.land/x/oak@v17.0.0/mod.ts";
-import { Game } from "../models/gameState.ts";
+import { Game, Player } from "../models/gameState.ts";
 import { generateBoard } from "../utils/generateBoard.ts";
 import { gameList } from "./gameController.ts";
 
-export const createGame = (ctx: Context) => {
+export const createGame = async (ctx: Context) => {
   const gameId = crypto.randomUUID();
-  gameList.set(gameId, new Game([], 0, generateBoard(), getRandomCell()));
+  const game = new Game(
+    [],
+    0,
+    generateBoard(),
+    getRandomCell(),
+    [],
+    [],
+    "waiting"
+  );
+  gameList.set(gameId, game);
   console.log("Game created: ", gameId);
   ctx.response.body = { gameId };
 };
 
-export const joinGame = (ctx: RouterContext<any, any, any>) => {
+export const joinGame = async (ctx: RouterContext<any, any, any>) => {
   const gameId = ctx.params.id;
   const game = gameList.get(gameId);
 
@@ -26,13 +35,14 @@ export const joinGame = (ctx: RouterContext<any, any, any>) => {
     return;
   }
 
+  const { name } = await ctx.request.body.json();
   const playerId = crypto.randomUUID();
-  game.players.push(playerId);
-  if (game.players.length === 2) {
-    game.status = "playing";
-  }
-  ctx.response.body = { playerId };
-  console.log("Player joined: ", playerId);
+  const newPlayer: Player = { id: playerId, name };
+  
+  game.addPlayer(newPlayer);
+  
+  ctx.response.body = { playerId, name };
+  console.log("Player joined: ", playerId, name);
 };
 
 function getRandomCell(): [number, number] {
