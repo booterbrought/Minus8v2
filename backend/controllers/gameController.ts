@@ -4,7 +4,7 @@ import { Game } from "../models/gameState.ts";
 export const gameList: Map<string, Game> = new Map();
 
 export const getGameState = (
-  ctx: RouterContext<"/game/:id", { id: string }>,
+  ctx: RouterContext<"/api/game/:id", { id: string }>,
 ) => {
   const gameId = ctx.params.id;
   const game = gameList.get(gameId);
@@ -20,7 +20,7 @@ export const getGameState = (
 
 export const makeMove = async (
   ctx: RouterContext<
-    "/game/:id/move",
+    "/api/game/:id/move",
     { id: string },
     {
       playerId: string;

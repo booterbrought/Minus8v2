@@ -5,7 +5,7 @@ import { authMiddleware } from "../middleware/authMiddleware.ts";
 const router = new Router();
 
 router
-  .get("/game/:id", authMiddleware, getGameState)
-  .post("/game/:id/move", authMiddleware, makeMove);
+  .get("/api/game/:id", authMiddleware, getGameState)
+  .post("/api/game/:id/move", authMiddleware, makeMove);
 
 export default router;

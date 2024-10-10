@@ -5,7 +5,7 @@ import { authMiddleware } from "../middleware/authMiddleware.ts";
 const router = new Router();
 
 router
-  .post("/game", authMiddleware, createGame)
-  .post("/game/:id/join", authMiddleware, joinGame);
+  .post("/api/game", authMiddleware, createGame)
+  .post("/api/game/:id/join", authMiddleware, joinGame);
 
 export default router;
