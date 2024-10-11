@@ -30,5 +30,11 @@
       "runtimeArgs": [
       ]
     }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Backend & Frontend",
+      "configurations": ["Launch Backend", "Launch Frontend"]
+    }
   ]
 }

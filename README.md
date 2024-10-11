@@ -1,53 +1,40 @@
-# Game Server
+# Minus8v2 Game Server
 
-This is a game server built using Deno and the Oak framework. It supports creating games, joining games, and making moves within a game.
+A Deno-based game server using Oak framework for creating, joining, and playing games.
 
-## Features
+## Quick Start
 
-- Create a new game
-- Join an existing game
-- Make moves in a game
-- Authentication for game actions
-
-## Getting Started
-
-### Prerequisites
-
-- [Deno](https://deno.land/) installed on your machine.
-
-### Installation
-
-1. Clone the repository:
-
+1. Install [Deno](https://deno.land/)
+2. Clone and run:
    ```bash
    git clone https://github.com/booterbrought/Minus8v2.git
-   cd gameserver
-   ```
-
-2. Run the server:
-
-   ```bash
+   cd Minus8v2
+   cd frontend
+   npm install
+   npm run build
+   cd ..
    deno run --allow-net --allow-read --unstable backend/server.ts
    ```
+3. Server runs at `http://localhost:8000`
 
-### Usage
+## Key Endpoints
 
-- Access the server at `http://localhost:8000`.
-- Use the provided endpoints to interact with the game server.
+- `POST /auth/login`: Login
+- `POST /auth/register`: Register
+- `POST /game`: Create game
+- `POST /game/:id/join`: Join game
+- `GET /game/:id`: Get game state
+- `POST /game/:id/move`: Make move
 
-### Endpoints
+## Tech Stack
 
-- `POST /auth/login`: Login to the server.
-- `POST /auth/register`: Register a new user.
-- `POST /game`: Create a new game.
-- `POST /game/:id/join`: Join an existing game.
-- `GET /game/:id`: Get the current state of a game.
-- `POST /game/:id/move`: Make a move in a game.
+- Backend: Deno + Oak
+- Frontend: Vite + Vue + TypeScript
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request.
+Issues and pull requests welcome.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENСE](LICENCE.md) file for details.
+MIT
