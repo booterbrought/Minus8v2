@@ -24,7 +24,8 @@
             :class="{
               'eaten': isEaten(rowIndex, colIndex),
               'active': isActive(rowIndex, colIndex),
-              'dimmed': isDimmed(rowIndex, colIndex)
+              'dimmed': isDimmed(rowIndex, colIndex),
+              'last': isLastEatenCell([rowIndex, colIndex])
             }"
             :style="getCellStyle(cell)"
             @click="makeMove(rowIndex, colIndex)"
@@ -83,11 +84,11 @@ const makeMove = async (row: number, col: number) => {
   // Determine if the move is valid on the client-side
   const [currentRow, currentCol] = game.value.currentCell;
   if (game.value.currentTurn === 0 && row !== currentRow) {
-    alert('Invalid move: You must move horizontally.');
+    // alert('Invalid move: You must move horizontally.');
     return;
   }
   if (game.value.currentTurn === 1 && col !== currentCol) {
-    alert('Invalid move: You must move vertically.');
+    // alert('Invalid move: You must move vertically.');
     return;
   }
 
@@ -106,10 +107,10 @@ const makeMove = async (row: number, col: number) => {
       await fetchGameState();
     } else {
       const errorData = await response.json();
-      alert(`Failed to make move: ${errorData.error}`);
+      // alert(`Failed to make move: ${errorData.error}`);
     }
   } catch (error) {
-    console.error('Error making move:', error);
+    // console.error('Error making move:', error);
   }
 };
 
@@ -200,6 +201,11 @@ const currentPlayerName = computed(() => {
   return currentPlayer.name;
 });
 
+const isLastEatenCell = (cell: [number, number]) => {
+  const lastMove = game.value?.moves[game.value?.moves.length - 1];
+  return lastMove && lastMove[0] === cell[0] && lastMove[1] === cell[1];
+};
+
 onMounted(() => {
   fetchGameState();
   // Optionally, set up a polling mechanism to refresh game state
@@ -243,11 +249,12 @@ onMounted(() => {
 
 .board {
   display: grid;
-  grid-template-rows: repeat(8, 50px);
-  grid-template-columns: repeat(8, 50px);
-  gap: 5px;
+  grid-template-rows: repeat(8, minmax(30px, 50px));
+  grid-template-columns: repeat(8, minmax(30px, 50px));
+  gap: 2px;
   justify-content: center;
-  margin: 20px 0;
+  margin: 20px auto;
+  max-width: 100%;
 }
 
 .row {
@@ -260,10 +267,10 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 24px;
+  font-size: 18px;
   font-weight: bold;
-  width: 50px;
-  height: 50px;
+  width: 100%;
+  height: 100%;
   text-shadow: 1px 1px 2px black;
   transition: all 0.3s ease;
 }
@@ -272,11 +279,16 @@ onMounted(() => {
   opacity: 0.8;
 }
 
-.cell.eaten {
+.cell.eaten:not(.last) {
   visibility: hidden;
   background-color: transparent !important;
   border: none;
+  opacity: 0;
   cursor: default;
+}
+
+.cell.eaten.last {
+  opacity: 0.1;
 }
 
 .cell.active {
@@ -286,5 +298,28 @@ onMounted(() => {
 .cell.dimmed {
   opacity: 0.7;
   pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .game {
+    padding: 10px;
+  }
+
+  .board {
+    gap: 1px;
+  }
+
+  .cell {
+    font-size: 14px;
+  }
+
+  .scores {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .player-score {
+    margin-bottom: 0.5rem;
+  }
 }
 </style>

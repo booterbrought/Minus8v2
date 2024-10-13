@@ -1,4 +1,4 @@
-import { Router } from "https://deno.land/x/oak@v17.0.0/mod.ts";
+import { Router } from "https://deno.land/x/oak/mod.ts";
 import { getGameState, makeMove } from "../controllers/gameController.ts";
 import { authMiddleware } from "../middleware/authMiddleware.ts";
 

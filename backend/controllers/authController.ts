@@ -1,4 +1,4 @@
-import { Context } from "https://deno.land/x/oak@v17.0.0/mod.ts";
+import { Context } from "https://deno.land/x/oak/mod.ts";
 
 export const login = async (ctx: Context) => {
   const { username, password } = await ctx.request.body.json();

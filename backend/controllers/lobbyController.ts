@@ -1,4 +1,4 @@
-import { Context, RouterContext } from "https://deno.land/x/oak@v17.0.0/mod.ts";
+import { Context, RouterContext } from "https://deno.land/x/oak/mod.ts";
 import { Game, Player } from "../models/gameState.ts";
 import { generateBoard } from "../utils/generateBoard.ts";
 import { gameList } from "./gameController.ts";

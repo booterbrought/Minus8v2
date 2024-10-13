@@ -4,7 +4,6 @@
     <div class="user-info">
       <label for="username">Your Name:</label>
       <input v-model="currentUsername" type="text" id="username" />
-      <button @click="updateUsername">Update Name</button>
     </div>
     <button @click="createGame">Create New Game</button>
     <div>
@@ -15,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
 
@@ -24,14 +23,11 @@ const gameId = ref('');
 const userStore = useUserStore();
 const currentUsername = ref(userStore.username);
 
-const updateUsername = () => {
-  if (currentUsername.value.trim() === '') {
-    alert('Username cannot be empty.');
-    return;
+watch(currentUsername, (newUsername) => {
+  if (newUsername.trim() !== '') {
+    userStore.setUsername(newUsername);
   }
-  userStore.setUsername(currentUsername.value);
-  alert('Username updated successfully.');
-};
+});
 
 const createGame = async () => {
   try {
