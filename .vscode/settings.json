@@ -1,4 +1,13 @@
 {
     "deno.enablePaths": ["backend"],
     "deno.lint": false,
+    "css.lint.unknownAtRules": "ignore",
+    "vue.lint.unknownAtRules": "ignore",
+    "tailwindCSS.includeLanguages": {
+      "vue": "html",
+      "vue-html": "html"
+    },
+    "editor.quickSuggestions": {
+      "strings": true
+    }
 }

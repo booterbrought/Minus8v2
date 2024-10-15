@@ -1,14 +1,18 @@
 <template>
-  <div class="game-menu">
-    <h2>Game Menu</h2>
-    <div class="user-info">
-      <label for="username">Your Name:</label>
-      <input v-model="currentUsername" type="text" id="username" />
+  <div class="game-menu max-w-md mx-auto text-center">
+    <h2 class="text-2xl font-bold mb-4 text-gray-200">Game Menu</h2>
+    <div class="user-info mb-5">
+      <label for="username" class="mr-2 text-gray-200">Your Name:</label>
+      <input v-model="currentUsername" type="text" id="username" class="border rounded px-2 py-1" />
     </div>
-    <button @click="createGame">Create New Game</button>
-    <div>
-      <input v-model="gameId" placeholder="Enter Game ID" />
-      <button @click="joinGame">Join Game</button>
+    <button @click="createGame" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded m-2">
+      Create New Game
+    </button>
+    <div class="mt-4">
+      <input v-model="gameId" placeholder="Enter Game ID" class="border rounded px-2 py-1 mr-2" />
+      <button @click="joinGame" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+        Join Game
+      </button>
     </div>
   </div>
 </template>
@@ -89,18 +93,5 @@ const joinGame = async () => {
 </script>
 
 <style scoped>
-.game-menu {
-  max-width: 400px;
-  margin: auto;
-  text-align: center;
-}
-button {
-  margin: 10px;
-}
-.user-info {
-  margin-bottom: 20px;
-}
-.user-info input {
-  margin-left: 10px;
-}
+/* Remove all existing styles */
 </style>

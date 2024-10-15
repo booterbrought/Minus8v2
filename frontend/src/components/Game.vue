@@ -1,6 +1,6 @@
 <template>
   <div class="game">
-    <h2>Game ID: {{ gameId }}</h2>
+    <h2 class="game-id">Game ID: {{ gameId }}</h2>
     <div class="score-panel">
       <h3>Scores:</h3>
       <div class="scores">
@@ -10,7 +10,7 @@
       </div>
     </div>
     <div v-if="game">
-      <p>Current Turn: {{ currentPlayerName }}</p>
+      <p class="current-turn">Current Turn: {{ currentPlayerName }}</p>
       <div class="board">
         <div
           v-for="(row, rowIndex) in game.board"
@@ -215,111 +215,56 @@ onMounted(() => {
 
 <style scoped>
 .game {
-  max-width: 600px;
-  margin: auto;
-  text-align: center;
-  background-color: #1e1e1e;
-  color: #e0e0e0;
-  padding: 20px;
-  border-radius: 10px;
+  @apply mx-auto text-center bg-gray-800 text-gray-200 p-5 pt-3 rounded-lg max-w-full max-h-full;
+  height: calc(100vh - 4rem);
 }
 
 .score-panel {
-  background-color: #2c2c2c;
-  padding: 1.5rem;
-  border: 3px solid #4a4a4a;
-  border-radius: 10px;
-  margin-bottom: 1.5rem;
+  @apply bg-gray-700 p-1 border border-gray-600 rounded-lg mt-2;
 }
 
 .scores {
-  display: flex;
-  justify-content: space-around;
-  font-size: 1.5rem;
+  @apply flex justify-around text-xl;
 }
 
 .player-score {
-  font-weight: bold;
-  color: #8bc34a;
+  @apply font-bold text-green-400;
 }
 
-.player-score span:first-child {
-  margin-right: 0.5rem;
+.current-turn {
+  @apply py-1
 }
 
 .board {
-  display: grid;
-  grid-template-rows: repeat(8, minmax(30px, 50px));
-  grid-template-columns: repeat(8, minmax(30px, 50px));
-  gap: 2px;
-  justify-content: center;
-  margin: 20px auto;
-  max-width: 100%;
+  @apply grid grid-cols-8 gap-0.5;
 }
 
 .row {
-  display: contents;
+  @apply contents;
 }
 
 .cell {
-  border: 1px solid #4a4a4a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  width: 100%;
-  height: 100%;
-  text-shadow: 1px 1px 2px black;
-  transition: all 0.3s ease;
+  @apply text-shadow-sm shadow-black border border-gray-600 flex items-center justify-center cursor-pointer text-xl font-bold transition-all duration-300 rounded-md;
+  aspect-ratio: 1 / 1;
 }
 
 .cell:hover {
-  opacity: 0.8;
+  @apply opacity-80;
 }
 
 .cell.eaten:not(.last) {
-  visibility: hidden;
-  background-color: transparent !important;
-  border: none;
-  opacity: 0;
-  cursor: default;
+  @apply hidden bg-transparent border-none opacity-0 cursor-default;
 }
 
 .cell.eaten.last {
-  opacity: 0.1;
+  @apply opacity-10;
 }
 
 .cell.active {
-  border: 2px solid #ffd700;
+  @apply border-2 border-yellow-500;
 }
 
 .cell.dimmed {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-@media (max-width: 480px) {
-  .game {
-    padding: 10px;
-  }
-
-  .board {
-    gap: 1px;
-  }
-
-  .cell {
-    font-size: 14px;
-  }
-
-  .scores {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .player-score {
-    margin-bottom: 0.5rem;
-  }
+  @apply opacity-70 pointer-events-none;
 }
 </style>
