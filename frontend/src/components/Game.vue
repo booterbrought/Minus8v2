@@ -28,11 +28,45 @@ onUnmounted(() => {
 });
 
 function copyGameId() {
-  navigator.clipboard.writeText(`${window.location.host}/menu/${gameId}`);
-  copyText.value = 'Copied!';
-  setTimeout(() => {
-    copyText.value = 'Click to copy invite link';
-  }, 1500);
+  const inviteLink = `${window.location.host}/menu/${gameId}`;
+  
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(inviteLink)
+      .then(() => {
+        copyText.value = 'Copied!';
+        setTimeout(() => {
+          copyText.value = 'Click to copy invite link';
+        }, 1500);
+      })
+      .catch((err) => {
+        console.error('Failed to copy:', err);
+        fallbackCopyToClipboard(inviteLink);
+      });
+  } else {
+    fallbackCopyToClipboard(inviteLink);
+  }
+}
+
+function fallbackCopyToClipboard(text: string) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '0';
+  textarea.style.top = '0';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  
+  try {
+    document.execCommand('copy');
+    copyText.value = 'Copied!';
+  } catch (err) {
+    console.error('Fallback copy failed:', err);
+    copyText.value = 'Copy failed, please copy manually';
+  }
+  
+  document.body.removeChild(textarea);
 }
 </script>
 
@@ -48,5 +82,12 @@ function copyGameId() {
 .game {
   @apply mx-auto text-center bg-gray-800 text-gray-200 p-3 pt-3 rounded-lg max-w-full max-h-full;
   width: 30vw;
+}
+
+@media (max-width: 640px) {
+  .game {
+    width: 100vw;
+    border-radius: 0;
+  }
 }
 </style>

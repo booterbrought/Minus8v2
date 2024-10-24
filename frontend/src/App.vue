@@ -17,4 +17,11 @@ import { Suspense } from 'vue';
 .loading {
   @apply text-center text-gray-200 text-xl mt-8;
 }
+
+@media (max-width: 640px) {
+  #app {
+    width: 100vw;
+    padding: 0;
+  }
+}
 </style>
