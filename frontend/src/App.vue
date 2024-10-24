@@ -1,13 +1,20 @@
 <template>
-  <router-view />
+  <Suspense>
+    <template #default>
+      <router-view />
+    </template>
+    <template #fallback>
+      <div class="loading">Loading...</div>
+    </template>
+  </Suspense>
 </template>
 
-<script lang="ts">
-export default {
-  name: 'App',
-};
+<script setup lang="ts">
+import { Suspense } from 'vue';
 </script>
 
 <style>
-/* Add any global styles here */
+.loading {
+  @apply text-center text-gray-200 text-xl mt-8;
+}
 </style>

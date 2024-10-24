@@ -1,270 +1,52 @@
 <template>
-  <div class="game">
-    <h2 class="game-id">Game ID: {{ gameId }}</h2>
-    <div class="score-panel">
-      <h3>Scores:</h3>
-      <div class="scores">
-        <div v-for="(player, index) in game?.players" :key="player.id" class="player-score">
-          <span>{{ player.name }}</span>: <span>{{ game?.scores[index] }}</span>
-        </div>
-      </div>
-    </div>
-    <div v-if="game">
-      <p class="current-turn">Current Turn: {{ currentPlayerName }}</p>
-      <div class="board">
-        <div
-          v-for="(row, rowIndex) in game.board"
-          :key="rowIndex"
-          class="row"
-        >
-          <div
-            v-for="(cell, colIndex) in row"
-            :key="colIndex"
-            class="cell"
-            :class="{
-              'eaten': isEaten(rowIndex, colIndex),
-              'active': isActive(rowIndex, colIndex),
-              'dimmed': isDimmed(rowIndex, colIndex),
-              'last': isLastEatenCell([rowIndex, colIndex])
-            }"
-            :style="getCellStyle(cell)"
-            @click="makeMove(rowIndex, colIndex)"
-          >
-            {{ cell !== null ? cell : '' }}
-          </div>
-        </div>
-      </div>
-    </div>
-    <div v-else>
-      <p>Loading game...</p>
-    </div>
+  <div v-if="gameService.gameState.value" class="game">
+    <h2 v-if="gameService.gameState.value.status === 'waiting'" @click="copyGameId" class="game-id">{{ copyText }}</h2>
+    <ScorePanel :game-state="gameService.gameState.value" />
+    <Board :game-state="gameService.gameState.value" @make-move="(row, col) => gameService.makeMove(row, col)" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useUserStore } from '../stores/userStore';
-
-interface GameState {
-  players: { id: string; name: string }[];
-  currentTurn: number;
-  board: number[][];
-  currentCell: [number, number];
-  moves: [number, number][];
-  scores: number[];
-  status: 'waiting' | 'playing' | 'finished';
-}
+import Board from './Board.vue';
+import { GameService, fetchGameState } from '../services/game';
+import ScorePanel from './ScorePanel.vue';
 
 const route = useRoute();
 const gameId = route.params.id as string;
-const game = ref<GameState | null>(null);
-const userStore = useUserStore();
+const gameService = new GameService(gameId, await fetchGameState(gameId));
 
-const fetchGameState = async () => {
-  try {
-    const token = userStore.token;
-    const response = await fetch(`/api/game/${gameId}`, {
-      headers: { Authorization: token || '' },
-    });
-
-    if (response.ok) {
-      game.value = await response.json();
-    } else {
-      alert('Failed to fetch game state');
-    }
-  } catch (error) {
-    console.error('Error fetching game state:', error);
-  }
-};
-
-const makeMove = async (row: number, col: number) => {
-  if (!game.value || !userStore.playerId) return;
-
-  // Determine if the move is valid on the client-side
-  const [currentRow, currentCol] = game.value.currentCell;
-  if (game.value.currentTurn === 0 && row !== currentRow) {
-    // alert('Invalid move: You must move horizontally.');
-    return;
-  }
-  if (game.value.currentTurn === 1 && col !== currentCol) {
-    // alert('Invalid move: You must move vertically.');
-    return;
-  }
-
-  try {
-    const token = userStore.token;
-    const response = await fetch(`/api/game/${gameId}/move`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token || '',
-      },
-      body: JSON.stringify({ playerId: userStore.playerId, row, col }),
-    });
-
-    if (response.ok) {
-      await fetchGameState();
-    } else {
-      const errorData = await response.json();
-      // alert(`Failed to make move: ${errorData.error}`);
-    }
-  } catch (error) {
-    // console.error('Error making move:', error);
-  }
-};
-
-const isEaten = (row: number, col: number): boolean => {
-  if (!game.value) return false;
-  return game.value.moves.some(([moveRow, moveCol]) => moveRow === row && moveCol === col);
-};
-
-const getActiveRow = computed(() => {
-  if (!game.value) return -1;
-  return game.value.currentTurn === 0 ? game.value.currentCell[0] : -1;
-});
-
-const getActiveCol = computed(() => {
-  if (!game.value) return -1;
-  return game.value.currentTurn === 1 ? game.value.currentCell[1] : -1;
-});
-
-const isActive = (row: number, col: number): boolean => {
-  if (!game.value) return false;
-  if (game.value.currentTurn === 0) {
-    return row === game.value.currentCell[0];
-  } else {
-    return col === game.value.currentCell[1];
-  }
-};
-
-const isDimmed = (row: number, col: number): boolean => {
-  if (!game.value) return false;
-  if (game.value.currentTurn === 0) {
-    return row !== game.value.currentCell[0];
-  } else {
-    return col !== game.value.currentCell[1];
-  }
-};
-
-const getCellStyle = (value: number) => {
-  if (value === 0) return { backgroundColor: '#3a3a3a', color: '#e0e0e0' };
-
-  const colorStops = [
-    { value: -8, color: [0, 102, 204] },    // Darker blue
-    { value: -3, color: [51, 153, 255] },   // Blue
-    { value: -1, color: [102, 178, 255] },  // Light blue
-    { value: 1, color: [255, 255, 102] },   // Light yellow
-    { value: 3, color: [255, 178, 102] },   // Light orange
-    { value: 8, color: [204, 0, 0] }        // Dark red
-  ];
-
-  const getInterpolatedColor = (value: number) => {
-    if (value <= colorStops[0].value) return colorStops[0].color;
-    if (value >= colorStops[colorStops.length - 1].value) return colorStops[colorStops.length - 1].color;
-
-    let lowerStop = colorStops[0];
-    let upperStop = colorStops[colorStops.length - 1];
-
-    for (let i = 0; i < colorStops.length - 1; i++) {
-      if (value >= colorStops[i].value && value <= colorStops[i + 1].value) {
-        lowerStop = colorStops[i];
-        upperStop = colorStops[i + 1];
-        break;
-      }
-    }
-
-    const range = upperStop.value - lowerStop.value;
-    const valueInRange = value - lowerStop.value;
-    const ratio = valueInRange / range;
-
-    return lowerStop.color.map((c, i) => 
-      Math.round(c + ratio * (upperStop.color[i] - c))
-    );
-  };
-
-  const [r, g, b] = getInterpolatedColor(value);
-  
-  return {
-    backgroundColor: `rgb(${r}, ${g}, ${b})`,
-    color: 'white',
-  };
-};
-
-const playerNames = computed(() => {
-  return game.value?.players.map(player => player.name).join(', ') || '';
-});
-
-const currentPlayerName = computed(() => {
-  if (!game.value) return '';
-  const currentPlayer = game.value.players[game.value.currentTurn];
-  return currentPlayer.name;
-});
-
-const isLastEatenCell = (cell: [number, number]) => {
-  const lastMove = game.value?.moves[game.value?.moves.length - 1];
-  return lastMove && lastMove[0] === cell[0] && lastMove[1] === cell[1];
-};
+const copyText = ref('Click to copy invite link');
 
 onMounted(() => {
-  fetchGameState();
-  // Optionally, set up a polling mechanism to refresh game state
-  setInterval(fetchGameState, 1000);
+  gameService.startPolling();
 });
+
+onUnmounted(() => {
+  gameService.stopPolling();
+});
+
+function copyGameId() {
+  navigator.clipboard.writeText(`${window.location.host}/menu/${gameId}`);
+  copyText.value = 'Copied!';
+  setTimeout(() => {
+    copyText.value = 'Click to copy invite link';
+  }, 1500);
+}
 </script>
 
 <style scoped>
+.game-id {
+  @apply cursor-pointer mb-3 text-gray-400 transition-colors duration-300;
+}
+
+.game-id:hover {
+  @apply text-white transition-colors duration-300;
+}
+
 .game {
-  @apply mx-auto text-center bg-gray-800 text-gray-200 p-5 pt-3 rounded-lg max-w-full max-h-full;
-  height: calc(100vh - 4rem);
-}
-
-.score-panel {
-  @apply bg-gray-700 p-1 border border-gray-600 rounded-lg mt-2;
-}
-
-.scores {
-  @apply flex justify-around text-xl;
-}
-
-.player-score {
-  @apply font-bold text-green-400;
-}
-
-.current-turn {
-  @apply py-1
-}
-
-.board {
-  @apply grid grid-cols-8 gap-0.5;
-}
-
-.row {
-  @apply contents;
-}
-
-.cell {
-  @apply text-shadow-sm shadow-black border border-gray-600 flex items-center justify-center cursor-pointer text-xl font-bold transition-all duration-300 rounded-md;
-  aspect-ratio: 1 / 1;
-}
-
-.cell:hover {
-  @apply opacity-80;
-}
-
-.cell.eaten:not(.last) {
-  @apply hidden bg-transparent border-none opacity-0 cursor-default;
-}
-
-.cell.eaten.last {
-  @apply opacity-10;
-}
-
-.cell.active {
-  @apply border-2 border-yellow-500;
-}
-
-.cell.dimmed {
-  @apply opacity-70 pointer-events-none;
+  @apply mx-auto text-center bg-gray-800 text-gray-200 p-3 pt-3 rounded-lg max-w-full max-h-full;
+  width: 30vw;
 }
 </style>

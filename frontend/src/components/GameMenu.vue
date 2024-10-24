@@ -1,6 +1,6 @@
 <template>
   <div class="game-menu max-w-md mx-auto text-center">
-    <h2 class="text-2xl font-bold mb-4 text-gray-200">Game Menu</h2>
+    <h2 class="text-2xl font-bold mb-4 text-gray-200">Minus 8!</h2>
     <div class="user-info mb-5">
       <label for="username" class="mr-2 text-gray-200">Your Name:</label>
       <input v-model="currentUsername" type="text" id="username" class="border rounded px-2 py-1" />
@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
 
@@ -31,6 +31,10 @@ watch(currentUsername, (newUsername) => {
   if (newUsername.trim() !== '') {
     userStore.setUsername(newUsername);
   }
+});
+
+onMounted(() => {
+  gameId.value = router.currentRoute.value.params.id as string;
 });
 
 const createGame = async () => {

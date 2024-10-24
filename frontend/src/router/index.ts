@@ -16,7 +16,7 @@ const routes = [
     component: Register,
   },
   {
-    path: '/menu',
+    path: '/menu/:id?',
     name: 'GameMenu',
     component: GameMenu,
   },
