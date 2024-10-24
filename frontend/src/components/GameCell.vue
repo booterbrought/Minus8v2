@@ -79,7 +79,7 @@ const cellStyle = computed(() => {
 <style scoped>
 .cell {
   @apply text-shadow-sm shadow-black border border-gray-600 flex items-center justify-center cursor-pointer font-bold transition-all duration-300 rounded-md;
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   aspect-ratio: 1 / 1;
   user-select: none;
 }

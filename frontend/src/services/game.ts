@@ -42,7 +42,7 @@ export interface GameState {
 export class GameService {
   private gameId: string;
   public gameState: Ref<GameState>;
-  private pollInterval?: NodeJS.Timeout;
+  private pollInterval: ReturnType<typeof setInterval> | undefined;  // Fixed typing
   private userStore = useUserStore();
 
   constructor(gameId: string, gameState: GameState) {
@@ -56,6 +56,11 @@ export class GameService {
     return currentPlayer.name;
   }
 
+  private getCurrentPlayerId(): string {
+    if (!this.gameState.value) return '';
+    return this.gameState.value.players[this.gameState.value.currentTurn].id;
+  }
+
   async makeMove(row: number, col: number): Promise<void> {
     if (!this.gameState.value || !this.userStore.playerId) return;
 
@@ -63,8 +68,15 @@ export class GameService {
     const [currentRow, currentCol] = this.gameState.value.currentCell;
     if (this.gameState.value.currentTurn === 0 && row !== currentRow) return;
     if (this.gameState.value.currentTurn === 1 && col !== currentCol) return;
+    // Validate if the current player is making the move
+    const currentPlayerId = this.getCurrentPlayerId();
+    if (currentPlayerId !== this.userStore.playerId) {
+      console.error('It is not your turn to make a move.');
+      return;
+    }
 
     try {
+      this.gameState.value.moves.push([row, col]);
       const response = await fetch(`/api/game/${this.gameId}/move`, {
         method: 'POST',
         headers: {
