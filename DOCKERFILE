@@ -9,10 +9,6 @@ RUN npm run build
 # Stage 2: Final Deno image
 FROM denoland/deno:alpine
 
-# Create a non-root user
-RUN addgroup -S deno && \
-    adduser -S deno -G deno
-
 WORKDIR /app
 
 # Copy backend files
