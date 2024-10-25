@@ -28,15 +28,14 @@ onUnmounted(() => {
 });
 
 function copyGameId() {
-  const inviteLink = `${window.location.host}/menu/${gameId}`;
-  
+  const inviteLink = `${window.location.origin}/menu/${gameId}`;
+  setTimeout(() => {
+    copyText.value = 'Click to copy invite link';
+  }, 1500);
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(inviteLink)
       .then(() => {
         copyText.value = 'Copied!';
-        setTimeout(() => {
-          copyText.value = 'Click to copy invite link';
-        }, 1500);
       })
       .catch((err) => {
         console.error('Failed to copy:', err);
@@ -57,7 +56,7 @@ function fallbackCopyToClipboard(text: string) {
   document.body.appendChild(textarea);
   textarea.focus();
   textarea.select();
-  
+
   try {
     document.execCommand('copy');
     copyText.value = 'Copied!';
@@ -65,7 +64,7 @@ function fallbackCopyToClipboard(text: string) {
     console.error('Fallback copy failed:', err);
     copyText.value = 'Copy failed, please copy manually';
   }
-  
+
   document.body.removeChild(textarea);
 }
 </script>
