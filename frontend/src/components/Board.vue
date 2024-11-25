@@ -54,7 +54,7 @@ function isDimmed(row: number, col: number): boolean {
 }
 
 function isLastEatenCell(cell: [number, number]): boolean {
-  const lastMove = props.gameState.moves[props.gameState.moves.length - 1];
+  const lastMove = props.gameState.moves.at(-1);
   return (lastMove && lastMove[0] === cell[0] && lastMove[1] === cell[1]) || false;
 }
 </script>

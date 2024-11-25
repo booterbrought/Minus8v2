@@ -1,16 +1,7 @@
 export function generateBoard(): number[][] {
-  const board: number[][] = [];
-  const size = 8;
-
-  for (let row = 0; row < size; row++) {
-    const currentRow: number[] = [];
-    for (let col = 0; col < size; col++) {
-      currentRow.push(generateRandomNonZero());
-    }
-    board.push(currentRow);
-  }
-
-  return board;
+  return Array.from({ length: 8 }, () => 
+    Array.from({ length: 8 }, () => generateRandomNonZero())
+  );
 }
 
 function generateRandomNonZero(): number {

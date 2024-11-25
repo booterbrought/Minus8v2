@@ -19,7 +19,7 @@ export const createGame = async (ctx: Context) => {
   ctx.response.body = { gameId };
 };
 
-export const joinGame = async (ctx: RouterContext<any, any, any>) => {
+export const joinGame = async (ctx: RouterContext<"/join/:id", { id: string }>) => {
   const gameId = ctx.params.id;
   const game = gameList.get(gameId);
 
