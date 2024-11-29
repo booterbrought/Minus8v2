@@ -45,18 +45,17 @@ export const makeMove = async (
     return;
   }
 
-  // Update the player's score
-  game.scores[game.currentTurn] += game.board[row][col];
-
-  // Update the move logic here
-  game.currentTurn = 1 - game.currentTurn;
-  game.moves.push([row, col]);
+  updateGameState(game, row, col);
   
-  // Update currentCell
-  game.currentCell = [row, col];
-
   ctx.response.body = { success: true, scores: game.scores };
 };
+
+function updateGameState(game: Game, row: number, col: number) {
+  game.scores[game.currentTurn] += game.board[row][col];
+  game.currentTurn = 1 - game.currentTurn;
+  game.moves.push([row, col]);
+  game.currentCell = [row, col];
+}
 
 const validateMove = (game: Game, playerId: string, row: number, col: number): string | null => {
   if (game.players[game.currentTurn].id !== playerId) {
