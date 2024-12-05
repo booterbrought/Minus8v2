@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  game-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: minus8-game-server
+    ports:
+      - "80:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+    volumes:
+      # Hot reload for development (optional)
+      - ./backend:/app/backend
+    networks:
+      - game-network
+
+networks:
+  game-network:
+    driver: bridge 

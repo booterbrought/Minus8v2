@@ -4,6 +4,7 @@ import lobbyRoutes from "./routes/lobbyRoutes.ts";
 import gameRoutes from "./routes/gameRoutes.ts";
 
 const app = new Application();
+const router = new Router();
 
 // CORS Middleware
 app.use(async (ctx, next) => {
@@ -55,6 +56,15 @@ app.use(async (ctx) => {
   });
 });
 */
+
+// Add health check route
+router.get("/health", (ctx) => {
+  ctx.response.status = 200;
+  ctx.response.body = { status: "healthy" };
+});
+
+app.use(router.routes());
+app.use(router.allowedMethods());
 
 // Start the Server
 const PORT = 8000;
