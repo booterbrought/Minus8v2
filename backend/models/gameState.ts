@@ -1,3 +1,5 @@
+import { wsConnections } from "../routes/ws.ts";
+
 export interface Player {
   id: string;
   name: string;

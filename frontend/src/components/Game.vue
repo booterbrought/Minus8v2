@@ -20,11 +20,11 @@ const gameService = new GameService(gameId, await fetchGameState(gameId));
 const copyText = ref('Click to copy invite link');
 
 onMounted(() => {
-  gameService.startPolling();
+  gameService.wsConnect();
 });
 
 onUnmounted(() => {
-  gameService.stopPolling();
+  gameService.wsDisconnect();
 });
 
 function copyGameId() {

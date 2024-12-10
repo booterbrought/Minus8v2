@@ -2,6 +2,8 @@ import { Application, Router, send } from "https://deno.land/x/oak/mod.ts";
 import authRoutes from "./routes/authRoutes.ts";
 import lobbyRoutes from "./routes/lobbyRoutes.ts";
 import gameRoutes from "./routes/gameRoutes.ts";
+import { wsHandler } from "./routes/ws.ts";
+const PORT = 8000;
 
 const app = new Application();
 const router = new Router();
@@ -13,6 +15,8 @@ app.use(async (ctx, next) => {
   ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   ctx.response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 });
+
+router.get("/api/ws/:playerId", wsHandler);
 
 // API Routes
 app.use(authRoutes.routes());
@@ -47,18 +51,8 @@ app.use(async (ctx, next) => {
   }
 });
 
-// Catch-All Route (Optional)
-// If you prefer a dedicated catch-all route, uncomment the following:
-/*
-app.use(async (ctx) => {
-  await send(ctx, "/index.html", {
-    root: `${Deno.cwd()}/frontend/dist`,
-  });
-});
-*/
-
 // Add health check route
-router.get("/health", (ctx) => {
+router.get("/api/health", (ctx) => {
   ctx.response.status = 200;
   ctx.response.body = { status: "healthy" };
 });
@@ -67,6 +61,5 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 // Start the Server
-const PORT = 8000;
 console.log(`Server is running on port ${PORT}`);
 await app.listen({ port: PORT });

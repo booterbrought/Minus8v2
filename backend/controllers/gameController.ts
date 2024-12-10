@@ -1,5 +1,6 @@
 import { RouterContext } from "https://deno.land/x/oak/mod.ts";
-import { Game } from "../models/gameState.ts";
+import { Game, Player } from "../models/gameState.ts";
+import { wsConnections } from "../routes/ws.ts";
 
 export const gameList: Map<string, Game> = new Map();
 
@@ -45,9 +46,35 @@ export const makeMove = async (
     return;
   }
 
-  updateGameState(game, row, col);
-  
+  updateGameState(game, row, col);  
   ctx.response.body = { success: true, scores: game.scores };
+};
+
+export const joinGame = async (ctx: RouterContext<"/api/game/:id/join", { id: string }>) => {
+  const gameId = ctx.params.id;
+  const game = gameList.get(gameId);
+
+  if (!game) {
+    ctx.response.status = 404;
+    ctx.response.body = { error: "Game not found" };
+    return;
+  }
+
+  if (game.players.length >= 2) {
+    ctx.response.status = 400;
+    ctx.response.body = { error: "Game is full" };
+    return;
+  }
+
+  const { name } = await ctx.request.body.json();
+  const playerId = crypto.randomUUID();
+  const newPlayer: Player = { id: playerId, name };
+  
+  game.addPlayer(newPlayer);
+  notifyPlayers(game);
+  
+  ctx.response.body = { playerId, name };
+  console.log("Player joined: ", playerId, name);
 };
 
 function updateGameState(game: Game, row: number, col: number) {
@@ -55,6 +82,9 @@ function updateGameState(game: Game, row: number, col: number) {
   game.currentTurn = 1 - game.currentTurn;
   game.moves.push([row, col]);
   game.currentCell = [row, col];
+
+  // Notify each player about the updated game state
+  notifyPlayers(game);
 }
 
 const validateMove = (game: Game, playerId: string, row: number, col: number): string | null => {
@@ -89,3 +119,12 @@ const validateMove = (game: Game, playerId: string, row: number, col: number): s
 
   return null; // Move is valid
 };
+
+function notifyPlayers(game: Game) {
+  game.players.forEach(player => {
+    const ws = wsConnections.get(player.id);
+    if (ws) {
+      ws.send(JSON.stringify({ game }));
+    }
+  });
+}

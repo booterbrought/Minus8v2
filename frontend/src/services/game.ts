@@ -42,8 +42,8 @@ export interface GameState {
 export class GameService {
   private gameId: string;
   public gameState: Ref<GameState>;
-  private pollInterval: ReturnType<typeof setInterval> | undefined;  // Fixed typing
   private userStore = useUserStore();
+  private ws: WebSocket | null = null;
 
   constructor(gameId: string, gameState: GameState) {
     this.gameId = gameId;
@@ -97,15 +97,19 @@ export class GameService {
     }
   }
 
-  startPolling(): void {
-    this.pollInterval = setInterval(async () => {
-      this.gameState.value = await fetchGameState(this.gameId);
-    }, 1000);
+  public wsConnect() {
+    this.ws = new WebSocket(`ws://localhost:8000/api/ws/${this.userStore.playerId}`);
+    if (this.ws) {
+      this.ws.onmessage = (event) => {
+        this.gameState.value = JSON.parse(event.data).game;
+      };
+    }
   }
 
-  stopPolling(): void {
-    if (this.pollInterval) {
-      clearInterval(this.pollInterval);
+  public wsDisconnect() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
     }
   }
 }
