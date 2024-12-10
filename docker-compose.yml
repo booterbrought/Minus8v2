@@ -4,7 +4,7 @@ services:
   game-server:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: DOCKERFILE
     container_name: minus8-game-server
     ports:
       - "8000:8000"
