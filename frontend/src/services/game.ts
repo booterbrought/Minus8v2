@@ -98,7 +98,9 @@ export class GameService {
   }
 
   public wsConnect() {
-    this.ws = new WebSocket(`ws://localhost:8000/api/ws/${this.userStore.playerId}`);
+    const wsHost = import.meta.env.PROD ? window.location.host : 'localhost:8000';
+    const wsProtocol = import.meta.env.PROD ? 'wss' : 'ws';
+    this.ws = new WebSocket(`${wsProtocol}://${wsHost}/api/ws/${this.userStore.playerId}`);
     if (this.ws) {
       this.ws.onmessage = (event) => {
         this.gameState.value = JSON.parse(event.data).game;
