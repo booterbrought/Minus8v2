@@ -1,4 +1,4 @@
-import { RouterContext } from "https://deno.land/x/oak/mod.ts";
+import { RouterContext } from "https://deno.land/x/oak@v17.1.3/mod.ts";
 import { Game, Player } from "../models/gameState.ts";
 import { wsConnections } from "../routes/ws.ts";
 
