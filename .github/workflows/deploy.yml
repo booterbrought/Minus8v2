@@ -27,6 +27,4 @@ jobs:
           SERVER_IP: ${{ secrets.SERVER_IP }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
-          scp -r docker-compose.yml Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/opt/minus8-game
-          scp -r backend frontend ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/opt/minus8-game
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd /opt/minus8-game && docker-compose down && docker-compose up -d --build"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd /opt/minus8-game && git pull && docker-compose down && docker-compose up -d --build"
