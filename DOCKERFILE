@@ -24,7 +24,7 @@ USER deno
 RUN deno cache backend/server.ts
 
 # Install curl
-RUN apk add --no-cache curl
+RUN sudo apk add --no-cache curl
 
 # Expose the port
 EXPOSE 8000
