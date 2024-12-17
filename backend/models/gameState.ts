@@ -1,4 +1,4 @@
-import { wsConnections } from "../routes/ws.ts";
+import { ObjectId } from "https://deno.land/x/mongo@v0.33.0/mod.ts";
 
 export interface Player {
   id: string;
@@ -6,6 +6,7 @@ export interface Player {
 }
 
 export class Game {
+  _id: ObjectId;
   players: Player[];
   currentTurn: number;
   board: number[][];
@@ -15,14 +16,16 @@ export class Game {
   status: "waiting" | "playing" | "finished";
 
   constructor(
+    _id: ObjectId = new ObjectId(),
     players: Player[] = [],
     currentTurn: number = 0,
     board: number[][] = [],
     currentCell: [number, number] = [0, 0],
     moves: [number, number][] = [],
     scores: number[] = [],
-    status: "waiting" | "playing" | "finished" = "waiting"
+    status: "waiting" | "playing" | "finished" = "waiting",
   ) {
+    this._id = _id;
     this.players = players;
     this.currentTurn = currentTurn;
     this.board = board;

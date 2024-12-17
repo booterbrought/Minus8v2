@@ -1,6 +1,5 @@
 import { Application, Router, send } from "https://deno.land/x/oak@v17.1.3/mod.ts";
 import authRoutes from "./routes/authRoutes.ts";
-import lobbyRoutes from "./routes/lobbyRoutes.ts";
 import gameRoutes from "./routes/gameRoutes.ts";
 import { wsHandler } from "./routes/ws.ts";
 const PORT = 8000;
@@ -21,9 +20,6 @@ router.get("/api/ws/:playerId", wsHandler);
 // API Routes
 app.use(authRoutes.routes());
 app.use(authRoutes.allowedMethods());
-
-app.use(lobbyRoutes.routes());
-app.use(lobbyRoutes.allowedMethods());
 
 app.use(gameRoutes.routes());
 app.use(gameRoutes.allowedMethods());
