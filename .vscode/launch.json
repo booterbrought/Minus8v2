@@ -22,7 +22,7 @@
         "run",
         "--unstable",
         "--inspect-wait",
-        "--allow-all",
+        "--allow-all"
       ],
       "attachSimplePort": 9229
     },

@@ -5,7 +5,7 @@ import { ObjectId } from "https://deno.land/x/mongo@v0.33.0/mod.ts";
 import db from "../db.ts";
 import { generateBoard } from "../utils/generateBoard.ts";
 
-export const gameList: Map<ObjectId, Game> = new Map();
+export const gameList: Map<string, Game> = new Map();
 
 export const createGame = async (ctx: Context) => {
   const gameId = new ObjectId();
@@ -19,8 +19,8 @@ export const createGame = async (ctx: Context) => {
     [],
     "waiting",
   );
-  gameList.set(gameId, game);
-  console.log("Game created: ", gameId);
+  gameList.set(gameId.toString(), game);
+  console.log("Game created: ", gameId.toString());
   ctx.response.body = { gameId };
 };
 
@@ -30,11 +30,11 @@ function getRandomCell(): [number, number] {
   return [row, col];
 }
 
-export const getGameState = (
+export const getGameState = async (
   ctx: RouterContext<"/api/game/:id", { id: string }>,
 ) => {
-  const gameId = ctx.params.id;
-  const game = gameList.get(new ObjectId(gameId));
+  const gameId = new ObjectId(ctx.params.id);
+  const game = await findGameById(gameId.toString());
 
   if (!game) {
     ctx.response.status = 404;
@@ -57,7 +57,7 @@ export const makeMove = async (
   >,
 ) => {
   const gameId = ctx.params.id;
-  const game = gameList.get(new ObjectId(gameId));
+  const game = await findGameById(gameId);
 
   if (!game) {
     ctx.response.status = 404;
@@ -82,7 +82,7 @@ export const joinGame = async (
   ctx: RouterContext<"/api/game/:id/join", { id: string }>,
 ) => {
   const gameId = ctx.params.id;
-  const game = gameList.get(new ObjectId(gameId));
+  const game = await findGameById(gameId);
 
   if (!game) {
     ctx.response.status = 404;
@@ -101,7 +101,9 @@ export const joinGame = async (
   const newPlayer: Player = { id: playerId, name };
 
   game.addPlayer(newPlayer);
-  notifyPlayers(game);
+  if (game.status === "playing") {
+    notifyPlayers(game);
+  }
 
   ctx.response.body = { playerId, name };
   console.log("Player joined: ", playerId, name);
@@ -162,6 +164,8 @@ function notifyPlayers(game: Game) {
       ws.send(JSON.stringify({ game }));
     }
   });
+  saveGame(game);
+  console.log("Game saved: ", game._id.toString());
 }
 
 async function saveGame(game: Game): Promise<ObjectId> {
@@ -176,7 +180,7 @@ async function saveGame(game: Game): Promise<ObjectId> {
 }
 
 export async function findGameById(id: string): Promise<Game | null | undefined> {
-  if (!gameList.has(new ObjectId(id))) {
+  if (!gameList.has(id)) {
     const gameData = await db.collection("games").findOne({
       _id: new ObjectId(id),
     });
@@ -184,6 +188,7 @@ export async function findGameById(id: string): Promise<Game | null | undefined>
     if (!gameData) return null;
 
     const game = new Game(
+      gameData._id,
       gameData.players,
       gameData.currentTurn,
       gameData.board,
@@ -191,12 +196,11 @@ export async function findGameById(id: string): Promise<Game | null | undefined>
       gameData.moves,
       gameData.scores,
       gameData.status,
-      gameData._id,
     );
 
-    gameList.set(game._id, game);
+    gameList.set(game._id.toString(), game);
     return game;
   } else {
-    return gameList.get(new ObjectId(id));
+    return gameList.get(id);
   }
 }

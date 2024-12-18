@@ -64,6 +64,8 @@ export class GameService {
   async makeMove(row: number, col: number): Promise<void> {
     if (!this.gameState.value || !this.userStore.playerId) return;
 
+    if (this.gameState.value.status !== 'playing') return;
+
     // Client-side move validation
     const [currentRow, currentCol] = this.gameState.value.currentCell;
     if (this.gameState.value.currentTurn === 0 && row !== currentRow) return;
