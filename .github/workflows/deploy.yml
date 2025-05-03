@@ -28,4 +28,4 @@ jobs:
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} -p ${{ secrets.SERVER_PORT }} "cd /opt/minus8-game && git pull && sudo docker-compose down && sudo docker-compose up -d --build"
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} -p ${{ secrets.SERVER_PORT }} "cd /opt/minus8-game && git pull && sudo docker compose down && sudo docker compose up -d --build"
