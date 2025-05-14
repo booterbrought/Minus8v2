@@ -24,4 +24,4 @@ RUN deno cache backend/server.ts
 EXPOSE 8000
 
 # Run the server
-CMD ["deno", "run", "--allow-net", "--allow-read", "backend/server.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-read=/certs", "--allow-read=/app", "backend/server.ts"]
