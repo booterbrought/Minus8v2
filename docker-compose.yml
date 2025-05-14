@@ -19,6 +19,8 @@ services:
       - PORT=8000
     networks:
       - game-network
+    volumes:
+      - /etc/letsencrypt/live/dmbr.lv:/certs
 
 networks:
   game-network:
