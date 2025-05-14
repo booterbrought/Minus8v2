@@ -62,4 +62,39 @@ app.use(router.allowedMethods());
 
 // Start the Server
 console.log(`Server is running on port ${PORT}`);
-await app.listen({ port: PORT });
+
+// Check if SSL certificates exist
+const certPath = "./certs/fullchain.pem";
+const keyPath = "./certs/privkey.pem";
+
+// Helper function to check if a file exists
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await Deno.stat(path);
+    return true;
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+// Check if both certificate files exist
+const certExists = await fileExists(certPath);
+const keyExists = await fileExists(keyPath);
+
+if (certExists && keyExists) {
+  // Start with HTTPS
+  console.log("SSL certificates found, using HTTPS");
+  await app.listen({
+    port: PORT,
+    secure: true,
+    cert: certPath,
+    key: keyPath,
+  });
+} else {
+  // Start with HTTP
+  console.log("SSL certificates not found, using HTTP");
+  await app.listen({ port: PORT });
+}
