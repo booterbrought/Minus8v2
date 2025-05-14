@@ -85,14 +85,24 @@ const certExists = await fileExists(certPath);
 const keyExists = await fileExists(keyPath);
 
 if (certExists && keyExists) {
-  // Start with HTTPS
-  console.log("SSL certificates found, using HTTPS");
-  await app.listen({
-    port: PORT,
-    secure: true,
-    cert: certPath,
-    key: keyPath,
-  });
+  try {
+    // Start with HTTPS - reading the actual certificate files
+    console.log("SSL certificates found, using HTTPS");
+    const certFile = await Deno.readTextFile(certPath);
+    const keyFile = await Deno.readTextFile(keyPath);
+    
+    await app.listen({
+      port: PORT,
+      secure: true,
+      cert: certFile,
+      key: keyFile,
+    });
+  } catch (error) {
+    console.error("Error loading SSL certificates:", error);
+    // Fallback to HTTP if certificate loading fails
+    console.log("Falling back to HTTP due to certificate loading error");
+    await app.listen({ port: PORT });
+  }
 } else {
   // Start with HTTP
   console.log("SSL certificates not found, using HTTP");
