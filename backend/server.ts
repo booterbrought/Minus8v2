@@ -64,8 +64,8 @@ app.use(router.allowedMethods());
 console.log(`Server is running on port ${PORT}`);
 
 // Check if SSL certificates exist
-const certPath = "/certs/fullchain.pem";
-const keyPath = "/certs/privkey.pem";
+const certPath = "/etc/letsencrypt/live/dmbr.lv/fullchain.pem";
+const keyPath = "/etc/letsencrypt/live/dmbr.lv/privkey.pem";
 
 // Helper function to check if a file exists
 async function fileExists(path: string): Promise<boolean> {

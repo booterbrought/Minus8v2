@@ -20,7 +20,7 @@ services:
     networks:
       - game-network
     volumes:
-      - /etc/letsencrypt/live/dmbr.lv:/certs
+      - /etc/letsencrypt:/etc/letsencrypt
 
 networks:
   game-network:
