@@ -61,11 +61,32 @@ function isLastEatenCell(cell: [number, number]): boolean {
 
 <style scoped>
 .board {
-  @apply grid grid-cols-8 gap-0.5;
+  @apply grid grid-cols-8 gap-1;
+  grid-auto-rows: 1fr; /* Ensure rows have equal height */
+  aspect-ratio: 1 / 1; /* Make board square */
+  width: 90%; /* Take most of container width */
+  max-width: min(80vh, 700px); /* But not too big */
+  margin: 0 auto; /* Center horizontally */
 }
 
 .row {
   @apply contents;
+}
+
+/* Responsive gap sizes */
+@media (max-width: 640px) {
+  .board {
+    gap: 0.125rem;
+    width: 95%; /* Use more space on mobile */
+    max-width: min(85vh, 500px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .board {
+    gap: 0.25rem;
+    max-width: min(75vh, 800px);
+  }
 }
 </style>
 

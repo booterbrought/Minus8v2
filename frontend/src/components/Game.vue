@@ -1,8 +1,12 @@
 <template>
   <div v-if="gameService.gameState.value" class="game">
-    <h2 v-if="gameService.gameState.value.status === 'waiting'" @click="copyGameId" class="game-id">{{ copyText }}</h2>
-    <ScorePanel :game-state="gameService.gameState.value" />
-    <Board :game-state="gameService.gameState.value" @make-move="(row, col) => gameService.makeMove(row, col)" />
+    <div class="game-header">
+      <h2 v-if="gameService.gameState.value.status === 'waiting'" @click="copyGameId" class="game-id">{{ copyText }}</h2>
+      <ScorePanel :game-state="gameService.gameState.value" />
+    </div>
+    <div class="game-board-container">
+      <Board :game-state="gameService.gameState.value" @make-move="(row, col) => gameService.makeMove(row, col)" />
+    </div>
   </div>
 </template>
 
@@ -71,7 +75,7 @@ function fallbackCopyToClipboard(text: string) {
 
 <style scoped>
 .game-id {
-  @apply cursor-pointer mb-3 text-gray-400 transition-colors duration-300;
+  @apply cursor-pointer mb-3 text-gray-400 transition-colors duration-300 text-xl;
 }
 
 .game-id:hover {
@@ -79,14 +83,55 @@ function fallbackCopyToClipboard(text: string) {
 }
 
 .game {
-  @apply mx-auto text-center bg-gray-800 text-gray-200 p-3 pt-3 rounded-lg max-w-full max-h-full;
-  width: 30vw;
+  @apply mx-auto text-center bg-gray-800 text-gray-200 p-4 rounded-lg;
+  width: 90vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  margin: 5vh auto;
+}
+
+.game-header {
+  @apply flex-shrink-0;
+}
+
+.game-board-container {
+  @apply flex-grow flex items-center justify-center min-h-0;
+  /* Allow board to be square within container */
+  width: 100%;
+}
+
+/* Thin desktop screens - stick to top */
+@media (max-width: 1024px) and (min-height: 600px) {
+  .game-board-container {
+    @apply items-start; /* Align board at top on thin desktop screens */
+    padding-top: 1rem;
+  }
 }
 
 @media (max-width: 640px) {
   .game {
     width: 100vw;
+    height: 100vh;
     border-radius: 0;
+    margin: 0;
+    padding: 1rem;
+  }
+  
+  .game-id {
+    @apply text-lg mb-2;
+  }
+  
+  .game-board-container {
+    @apply items-start; /* Align board at top on mobile */
+    padding-top: 0.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .game {
+    max-width: 1200px;
+    max-height: 900px;
   }
 }
 </style>

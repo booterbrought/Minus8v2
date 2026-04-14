@@ -46,9 +46,13 @@ const cellStyle = computed(() => {
 <style scoped>
 .cell {
   @apply text-shadow-sm shadow-black border border-gray-600 flex items-center justify-center cursor-pointer font-bold transition-all duration-300 rounded-md;
-  font-size: 1.6rem;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 32px; /* Doubled base font size */
   aspect-ratio: 1 / 1;
   user-select: none;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden; /* Prevent content overflow */
 }
 
 .cell:hover {
@@ -70,5 +74,37 @@ const cellStyle = computed(() => {
 .cell.dimmed {
   @apply opacity-70 pointer-events-none;
 }
+
+/* Responsive font sizes - doubled from previous, max 40px */
+@media (max-width: 480px) {
+  .cell {
+    font-size: 24px;
+    border-width: 0.5px;
+  }
+  
+  .cell.active {
+    border-width: 2px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .cell {
+    font-size: 28px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .cell {
+    font-size: 36px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .cell {
+    font-size: 40px; /* Max size as requested */
+  }
+}
+
+/* Remove the 1440px media query since max is 40px */
 </style>
 

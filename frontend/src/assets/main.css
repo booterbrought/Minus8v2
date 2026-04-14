@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700&display=swap');
 @import './base.css';
 @tailwind base;
 @tailwind components;
@@ -6,12 +7,17 @@
 /* Add your custom styles below */
 #app {
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
 }
   
 body {
   display: flex;
   place-items: center;
+  margin: 0;
+  padding: 0;
+  font-family: 'Exo 2', sans-serif;
 }
 
 @media (min-width: 1024px) {

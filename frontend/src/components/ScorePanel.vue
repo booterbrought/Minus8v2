@@ -20,19 +20,29 @@ defineProps<{
 
 <style scoped>
 .score-panel {
-  @apply bg-gray-700 p-1 border border-gray-600 rounded-md mb-3;
+  @apply bg-gray-700 p-2 border border-gray-600 rounded-md mb-3;
 }
 
 .scores {
-  @apply flex justify-around text-xl;
+  @apply flex justify-around text-2xl;
 }
 
 .player-score.active {
-  @apply text-green-400 transition-colors duration-300;
+  @apply text-green-400 transition-colors duration-300 font-bold;
 }
 
 .player-score {
   @apply text-gray-400 transition-colors duration-300;
+}
+
+@media (max-width: 640px) {
+  .score-panel {
+    @apply p-1 mb-2;
+  }
+  
+  .scores {
+    @apply text-xl;
+  }
 }
 </style>
 
