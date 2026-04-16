@@ -1,80 +1,92 @@
-import { RouterContext } from "https://deno.land/x/oak@v17.1.3/mod.ts";
-import { Game, Player } from "../models/gameState.ts";
-import { wsConnections } from "../routes/ws.ts";
+import type { Context } from "hono";
+import { Game } from "../models/gameState";
+import { wsConnections } from "../routes/ws";
+import { saveGame } from "../db/database";
 
 export const gameList: Map<string, Game> = new Map();
 
-export const getGameState = (
-  ctx: RouterContext<"/api/game/:id", { id: string }>,
-) => {
-  const gameId = ctx.params.id;
+export const getGameState = (c: Context) => {
+  const gameId = c.req.param("id");
   const game = gameList.get(gameId);
 
   if (!game) {
-    ctx.response.status = 404;
-    ctx.response.body = { error: "Game not found" };
-    return;
+    return c.json({ error: "Game not found" }, 404);
   }
 
-  ctx.response.body = game;
+  return c.json(game);
 };
 
-export const makeMove = async (
-  ctx: RouterContext<
-    "/api/game/:id/move",
-    { id: string },
-    {
-      playerId: string;
-      row: number;
-      col: number;
-    }>) => {
-  const gameId = ctx.params.id;
+export const makeMove = async (c: Context) => {
+  const gameId = c.req.param("id");
   const game = gameList.get(gameId);
 
   if (!game) {
-    ctx.response.status = 404;
-    ctx.response.body = { error: "Game not found" };
-    return;
+    return c.json({ error: "Game not found" }, 404);
   }
 
-  const { playerId, row, col } = await ctx.request.body.json();
+  let body: { playerId?: unknown; row?: unknown; col?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const { playerId, row, col } = body;
+
+  if (typeof playerId !== "string" || !playerId.trim()) {
+    return c.json({ error: "playerId must be a non-empty string" }, 400);
+  }
+  if (typeof row !== "number" || !Number.isInteger(row) || row < 0 || row > 7) {
+    return c.json({ error: "row must be an integer between 0 and 7" }, 400);
+  }
+  if (typeof col !== "number" || !Number.isInteger(col) || col < 0 || col > 7) {
+    return c.json({ error: "col must be an integer between 0 and 7" }, 400);
+  }
 
   const validationError = validateMove(game, playerId, row, col);
   if (validationError) {
-    ctx.response.status = 400;
-    ctx.response.body = { error: validationError };
-    return;
+    return c.json({ error: validationError }, 400);
   }
 
-  updateGameState(game, row, col);  
-  ctx.response.body = { success: true, scores: game.scores };
+  updateGameState(game, row, col);
+  checkGameEnd(game);
+  saveGame(gameId, game);
+  notifyPlayers(game);
+
+  return c.json({ success: true, scores: game.scores });
 };
 
-export const joinGame = async (ctx: RouterContext<"/api/game/:id/join", { id: string }>) => {
-  const gameId = ctx.params.id;
+export const joinGame = async (c: Context) => {
+  const gameId = c.req.param("id");
   const game = gameList.get(gameId);
 
   if (!game) {
-    ctx.response.status = 404;
-    ctx.response.body = { error: "Game not found" };
-    return;
+    return c.json({ error: "Game not found" }, 404);
   }
 
   if (game.players.length >= 2) {
-    ctx.response.status = 400;
-    ctx.response.body = { error: "Game is full" };
-    return;
+    return c.json({ error: "Game is full" }, 400);
   }
 
-  const { name } = await ctx.request.body.json();
+  let body: { name?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  if (!name || name.length > 30) {
+    return c.json({ error: "Name must be 1-30 characters" }, 400);
+  }
+
   const playerId = crypto.randomUUID();
-  const newPlayer: Player = { id: playerId, name };
-  
-  game.addPlayer(newPlayer);
+  game.addPlayer({ id: playerId, name });
+  saveGame(gameId, game);
   notifyPlayers(game);
-  
-  ctx.response.body = { playerId, name };
+
   console.log("Player joined: ", playerId, name);
+  return c.json({ playerId, name });
 };
 
 function updateGameState(game: Game, row: number, col: number) {
@@ -82,9 +94,14 @@ function updateGameState(game: Game, row: number, col: number) {
   game.currentTurn = 1 - game.currentTurn;
   game.moves.push([row, col]);
   game.currentCell = [row, col];
+}
 
-  // Notify each player about the updated game state
-  notifyPlayers(game);
+function checkGameEnd(game: Game) {
+  const validMoves = game.getValidMoves();
+  if (validMoves.length === 0) {
+    game.status = "finished";
+    game.result = game.determineResult();
+  }
 }
 
 const validateMove = (game: Game, playerId: string, row: number, col: number): string | null => {
@@ -105,8 +122,8 @@ const validateMove = (game: Game, playerId: string, row: number, col: number): s
     }
   }
 
-  if (row < 0 || row > 7 || col < 0 || col > 7 || game.board[row][col] === 0) {
-    return "Invalid move";
+  if (game.board[row][col] === 0) {
+    return "Cell is empty";
   }
 
   if (game.moves.some((move) => move[0] === row && move[1] === col)) {

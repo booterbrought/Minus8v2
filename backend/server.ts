@@ -1,110 +1,88 @@
-import { Application, Router, send } from "https://deno.land/x/oak@v17.1.3/mod.ts";
-import authRoutes from "./routes/authRoutes.ts";
-import lobbyRoutes from "./routes/lobbyRoutes.ts";
-import gameRoutes from "./routes/gameRoutes.ts";
-import { wsHandler } from "./routes/ws.ts";
-const PORT = 8000;
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { serveStatic } from "hono/bun";
+import { createBunWebSocket } from "hono/bun";
+import authRoutes from "./routes/authRoutes";
+import lobbyRoutes from "./routes/lobbyRoutes";
+import gameRoutes from "./routes/gameRoutes";
+import { createWsHandler } from "./routes/ws";
+import { initDb, loadActiveGames } from "./db/database";
+import { gameList } from "./controllers/gameController";
 
-const app = new Application();
-const router = new Router();
+// Initialize database and restore active games
+initDb();
+const activeGames = loadActiveGames();
+for (const [id, game] of activeGames) {
+  gameList.set(id, game);
+}
+console.log(`Restored ${activeGames.size} active game(s) from database`);
 
-// CORS Middleware
-app.use(async (ctx, next) => {
-  await next();
-  ctx.response.headers.set("Access-Control-Allow-Origin", "*");
-  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  ctx.response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-});
+const app = new Hono();
+const { upgradeWebSocket, websocket } = createBunWebSocket();
 
-router.get("/api/ws/:playerId", wsHandler);
+// CORS
+app.use("*", cors());
+
+// WebSocket
+app.get("/api/ws/:playerId", upgradeWebSocket((c) => {
+  const playerId = c.req.param("playerId");
+  return createWsHandler(playerId);
+}));
 
 // API Routes
-app.use(authRoutes.routes());
-app.use(authRoutes.allowedMethods());
+app.route("/", authRoutes);
+app.route("/", lobbyRoutes);
+app.route("/", gameRoutes);
 
-app.use(lobbyRoutes.routes());
-app.use(lobbyRoutes.allowedMethods());
+// Health check
+app.get("/api/health", (c) => c.json({ status: "healthy" }));
 
-app.use(gameRoutes.routes());
-app.use(gameRoutes.allowedMethods());
-
-// Serve Static Frontend Files
-app.use(async (ctx, next) => {
-  const path = ctx.request.url.pathname;
-
-  // If the request starts with /api, skip to the next middleware
-  if (path.startsWith("/api")) {
-    return next();
-  }
-
-  try {
-    // Attempt to serve the requested file
-    await send(ctx, path, {
-      root: `${Deno.cwd()}/frontend/dist`,
-      index: "index.html",
-    });
-  } catch {
-    // If the file is not found, serve index.html for client-side routing
-    await send(ctx, "/index.html", {
-      root: `${Deno.cwd()}/frontend/dist`,
-    });
-  }
-});
-
-// Add health check route
-router.get("/api/health", (ctx) => {
-  ctx.response.status = 200;
-  ctx.response.body = { status: "healthy" };
-});
-
-app.use(router.routes());
-app.use(router.allowedMethods());
+// Serve Static Frontend Files (with SPA fallback)
+app.get("/*", serveStatic({ root: "./frontend/dist" }));
+app.get("/*", serveStatic({ root: "./frontend/dist", path: "index.html" }));
 
 // Start the Server
-console.log(`Server is running on port ${PORT}`);
+const PORT = 8000;
 
-// Check if SSL certificates exist
 const certPath = "/etc/letsencrypt/live/dmbr.lv/fullchain.pem";
 const keyPath = "/etc/letsencrypt/live/dmbr.lv/privkey.pem";
 
-// Helper function to check if a file exists
-async function fileExists(path: string): Promise<boolean> {
-  try {
-    await Deno.stat(path);
-    return true;
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      return false;
-    }
-    throw error;
-  }
-}
+const certFile = Bun.file(certPath);
+const keyFile = Bun.file(keyPath);
 
-// Check if both certificate files exist
-const certExists = await fileExists(certPath);
-const keyExists = await fileExists(keyPath);
+const [certExists, keyExists] = await Promise.all([
+  certFile.exists(),
+  keyFile.exists(),
+]);
 
 if (certExists && keyExists) {
   try {
-    // Start with HTTPS - reading the actual certificate files
     console.log("SSL certificates found, using HTTPS");
-    const certFile = await Deno.readTextFile(certPath);
-    const keyFile = await Deno.readTextFile(keyPath);
-    
-    await app.listen({
+    Bun.serve({
+      fetch: app.fetch,
+      websocket,
       port: PORT,
-      secure: true,
-      cert: certFile,
-      key: keyFile,
+      tls: {
+        cert: await certFile.text(),
+        key: await keyFile.text(),
+      },
     });
   } catch (error) {
     console.error("Error loading SSL certificates:", error);
-    // Fallback to HTTP if certificate loading fails
     console.log("Falling back to HTTP due to certificate loading error");
-    await app.listen({ port: PORT });
+    Bun.serve({
+      fetch: app.fetch,
+      websocket,
+      port: PORT,
+    });
   }
 } else {
-  // Start with HTTP
   console.log("SSL certificates not found, using HTTP");
-  await app.listen({ port: PORT });
+  Bun.serve({
+    fetch: app.fetch,
+    websocket,
+    port: PORT,
+  });
 }
+
+console.log(`Server is running on port ${PORT}`);

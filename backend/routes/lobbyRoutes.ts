@@ -1,10 +1,10 @@
-import { Router } from "https://deno.land/x/oak@v17.1.3/mod.ts";
-import { createGame } from "../controllers/lobbyController.ts";
-import { authMiddleware } from "../middleware/authMiddleware.ts";
+import { Hono } from "hono";
+import { createGame } from "../controllers/lobbyController";
+import { authMiddleware } from "../middleware/authMiddleware";
 
-const router = new Router();
+const router = new Hono();
 
 router
-  .post("/api/game", authMiddleware, createGame)
+  .post("/api/game", authMiddleware, createGame);
 
 export default router;

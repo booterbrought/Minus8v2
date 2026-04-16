@@ -1,9 +1,10 @@
-import { Context } from "https://deno.land/x/oak@v17.1.3/mod.ts";
-import { Game } from "../models/gameState.ts";
-import { generateBoard } from "../utils/generateBoard.ts";
-import { gameList } from "./gameController.ts";
+import type { Context } from "hono";
+import { Game } from "../models/gameState";
+import { generateBoard } from "../utils/generateBoard";
+import { gameList } from "./gameController";
+import { saveGame } from "../db/database";
 
-export const createGame = async (ctx: Context) => {
+export const createGame = async (c: Context) => {
   const gameId = crypto.randomUUID();
   const game = new Game(
     [],
@@ -15,8 +16,9 @@ export const createGame = async (ctx: Context) => {
     "waiting"
   );
   gameList.set(gameId, game);
+  saveGame(gameId, game);
   console.log("Game created: ", gameId);
-  ctx.response.body = { gameId };
+  return c.json({ gameId });
 };
 
 function getRandomCell(): [number, number] {

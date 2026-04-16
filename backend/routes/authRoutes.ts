@@ -1,7 +1,7 @@
-import { Router } from "https://deno.land/x/oak/mod.ts";
-import { login, register } from "../controllers/authController.ts";
+import { Hono } from "hono";
+import { login, register } from "../controllers/authController";
 
-const router = new Router();
+const router = new Hono();
 
 router
   .post("/api/auth/login", login)

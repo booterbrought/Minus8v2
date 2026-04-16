@@ -1,15 +1,12 @@
-import { Context } from "https://deno.land/x/oak/mod.ts";
+import type { Context } from "hono";
 
-export const login = async (ctx: Context) => {
-  const { username, password } = await ctx.request.body.json();
-  // Implement authentication logic here
-  // For example, validate credentials and generate a token
-  const token = crypto.randomUUID(); // Replace with real token generation
-  ctx.response.body = { token };
+export const login = async (c: Context) => {
+  const { username, password } = await c.req.json<{ username: string; password: string }>();
+  const token = crypto.randomUUID();
+  return c.json({ token });
 };
 
-export const register = async (ctx: Context) => {
-  const { username, password } = await ctx.request.body.json();
-  // Implement registration logic here
-  ctx.response.body = { message: "User registered successfully" };
+export const register = async (c: Context) => {
+  const { username, password } = await c.req.json<{ username: string; password: string }>();
+  return c.json({ message: "User registered successfully" });
 };

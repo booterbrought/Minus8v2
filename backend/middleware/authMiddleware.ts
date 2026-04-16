@@ -1,11 +1,9 @@
-import { Context } from "https://deno.land/x/oak/mod.ts";
+import type { Context, Next } from "hono";
 
-export const authMiddleware = async (ctx: Context, next: () => Promise<unknown>) => {
-  // const authHeader = ctx.request.headers.get("Authorization");
+export const authMiddleware = async (c: Context, next: Next) => {
+  // const authHeader = c.req.header("Authorization");
   // if (!authHeader || !isValidToken(authHeader)) {
-  //   ctx.response.status = 401;
-  //   ctx.response.body = { error: "Unauthorized" };
-  //   return;
+  //   return c.json({ error: "Unauthorized" }, 401);
   // }
   await next();
 };

@@ -6,8 +6,8 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-# Stage 2: Final Deno image
-FROM denoland/deno:alpine
+# Stage 2: Bun runtime
+FROM oven/bun:alpine
 
 WORKDIR /app
 
@@ -17,11 +17,11 @@ COPY backend/ backend/
 # Copy built frontend files from previous stage
 COPY --from=frontend-builder /app/frontend/dist frontend/dist
 
-# Cache Deno dependencies
-RUN deno cache backend/server.ts
+# Install backend dependencies
+RUN cd backend && bun install --production
 
 # Expose the port
 EXPOSE 8000
 
 # Run the server
-CMD ["deno", "run", "--allow-net", "--allow-read=/etc/letsencrypt/live/dmbr.lv", "--allow-read=/app", "backend/server.ts"]
+CMD ["bun", "run", "backend/server.ts"]

@@ -1,36 +1,26 @@
-import { RouterContext } from "https://deno.land/x/oak@v17.1.3/mod.ts";
+import type { WSContext } from "hono/ws";
 
-const wsConnections = new Map<string, WebSocket>();
+const wsConnections = new Map<string, WSContext>();
 
-const wsHandler = async (ctx: RouterContext<"/api/ws/:playerId">) => { // WebSocket connection
-  const playerId = ctx.params.playerId;
-  if (!playerId) {
-    ctx.response.status = 400;
-    ctx.response.body = { error: "Player ID is required" };
-    return;
-  } 
-  if (!ctx.isUpgradable) {
-    ctx.response.status = 400;
-    ctx.response.body = { error: "Connection is not upgradable" };
-    return;
-  }
-
-  const ws = await ctx.upgrade();
-  if (wsConnections.has(playerId)) {
-    wsConnections.get(playerId)?.close();
-    wsConnections.delete(playerId);
-    console.log("WebSocket connection closed");
-  }
-  wsConnections.set(playerId, ws);
-  console.log("WebSocket connection established");
-
-  ws.onmessage = (event) => {
-    console.log("WebSocket message received", event.data);
-  };
-  ws.onclose = () => {
-    console.log("WebSocket connection closed");
-    wsConnections.delete(playerId);
+function createWsHandler(playerId: string) {
+  return {
+    onOpen(_event: Event, ws: WSContext) {
+      if (wsConnections.has(playerId)) {
+        wsConnections.get(playerId)?.close();
+        wsConnections.delete(playerId);
+        console.log("WebSocket connection closed");
+      }
+      wsConnections.set(playerId, ws);
+      console.log("WebSocket connection established");
+    },
+    onMessage(event: MessageEvent, _ws: WSContext) {
+      console.log("WebSocket message received", event.data);
+    },
+    onClose(_event: CloseEvent, _ws: WSContext) {
+      wsConnections.delete(playerId);
+      console.log("WebSocket connection closed");
+    },
   };
 }
 
-export { wsHandler, wsConnections };
+export { wsConnections, createWsHandler };
