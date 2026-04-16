@@ -8,7 +8,7 @@ const routes = [
   {
     path: '/',
     name: 'Login',
-    component: GameMenu,
+    component: Login,
   },
   {
     path: '/register',

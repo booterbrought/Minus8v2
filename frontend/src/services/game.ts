@@ -26,6 +26,7 @@ export async function fetchGameState(gameId: string): Promise<GameState> {
     moves: [],
     scores: [],
     status: 'waiting',
+    result: '',
   };
 }
 
@@ -37,6 +38,7 @@ export interface GameState {
   moves: [number, number][];
   scores: number[];
   status: 'waiting' | 'playing' | 'finished';
+  result: '' | 'player1_wins' | 'player2_wins' | 'draw';
 }
 
 export class GameService {

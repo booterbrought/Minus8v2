@@ -12,6 +12,18 @@
       </div>
       <button type="submit" class="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Login</button>
     </form>
+    <div class="my-4 flex items-center">
+      <div class="flex-grow border-t border-gray-600"></div>
+      <span class="mx-3 text-gray-500 text-sm">or</span>
+      <div class="flex-grow border-t border-gray-600"></div>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label for="guest-name" class="block text-sm font-medium text-gray-700">Your Name:</label>
+        <input v-model="guestName" type="text" id="guest-name" placeholder="Enter your name" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" />
+      </div>
+      <button @click="playAsGuest" class="w-full py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700">Play as Guest</button>
+    </div>
     <p class="mt-4 text-center text-sm text-gray-600">
       Don't have an account?
       <router-link to="/register" class="text-indigo-600 hover:text-indigo-500">Register here</router-link>
@@ -26,6 +38,7 @@ import { useUserStore } from '../stores/userStore';
 
 const username = ref('');
 const password = ref('');
+const guestName = ref('');
 const router = useRouter();
 const userStore = useUserStore();
 
@@ -41,20 +54,25 @@ const handleLogin = async () => {
       const data = await response.json();
       userStore.setToken(data.token);
       userStore.setUsername(username.value);
-      // Redirect to the game menu instead of a specific game
       router.push('/menu');
     } else {
-      // Handle login errors
       alert('Login failed');
     }
   } catch (error) {
     console.error('Error during login:', error);
   }
 };
+
+const playAsGuest = () => {
+  const name = guestName.value.trim();
+  if (!name) {
+    alert('Please enter your name');
+    return;
+  }
+  userStore.setUsername(name);
+  router.push('/menu');
+};
 </script>
 
 <style scoped>
-
-
-
 </style>

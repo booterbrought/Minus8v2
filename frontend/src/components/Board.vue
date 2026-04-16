@@ -15,7 +15,7 @@
         :active="isActive(rowIndex, colIndex)"
         :dimmed="isDimmed(rowIndex, colIndex)"
         :last="isLastEatenCell([rowIndex, colIndex])"
-        @cell-click="$emit('make-move', rowIndex, colIndex)"
+        @cell-click="gameState.status === 'playing' && $emit('make-move', rowIndex, colIndex)"
       />
     </div>
   </div>
