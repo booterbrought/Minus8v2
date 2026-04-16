@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { Game } from "../models/gameState";
 import { wsConnections } from "../routes/ws";
-import { saveGame } from "../db/database";
+import { saveGame, saveGameResult, getGameHistory, getGameHistoryByUser } from "../db/database";
 
 export const gameList: Map<string, Game> = new Map();
 
@@ -49,7 +49,7 @@ export const makeMove = async (c: Context) => {
   }
 
   updateGameState(game, row, col);
-  checkGameEnd(game);
+  checkGameEnd(game, gameId);
   saveGame(gameId, game);
   notifyPlayers(game);
 
@@ -96,11 +96,12 @@ function updateGameState(game: Game, row: number, col: number) {
   game.currentCell = [row, col];
 }
 
-function checkGameEnd(game: Game) {
+function checkGameEnd(game: Game, gameId: string) {
   const validMoves = game.getValidMoves();
   if (validMoves.length === 0) {
     game.status = "finished";
     game.result = game.determineResult();
+    saveGameResult(gameId, game);
   }
 }
 
@@ -145,3 +146,11 @@ function notifyPlayers(game: Game) {
     }
   });
 }
+
+export const history = (c: Context) => {
+  const userId = c.req.param("userId");
+  if (userId) {
+    return c.json(getGameHistoryByUser(userId));
+  }
+  return c.json(getGameHistory());
+};

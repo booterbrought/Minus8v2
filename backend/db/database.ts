@@ -33,8 +33,98 @@ export function initDb(): void {
     )
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS game_results (
+      id TEXT PRIMARY KEY,
+      game_id TEXT NOT NULL,
+      player_id TEXT NOT NULL,
+      player_name TEXT NOT NULL,
+      score INTEGER NOT NULL,
+      result TEXT NOT NULL,
+      finished_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
   console.log("Database initialized");
 }
+
+// --- User operations ---
+
+export interface DbUser {
+  id: string;
+  username: string;
+  password_hash: string;
+  created_at: string;
+}
+
+export function registerUser(id: string, username: string, passwordHash: string): void {
+  db.prepare(
+    "INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)",
+  ).run(id, username, passwordHash);
+}
+
+export function findUserByUsername(username: string): DbUser | null {
+  return db.prepare(
+    "SELECT id, username, password_hash, created_at FROM users WHERE username = ?",
+  ).get(username) as DbUser | null;
+}
+
+export function getUserById(id: string): DbUser | null {
+  return db.prepare(
+    "SELECT id, username, password_hash, created_at FROM users WHERE id = ?",
+  ).get(id) as DbUser | null;
+}
+
+// --- Game results ---
+
+export function saveGameResult(gameId: string, game: Game): void {
+  const results = game.players.map((p, i) => ({
+    id: crypto.randomUUID(),
+    gameId,
+    playerId: p.id,
+    playerName: p.name,
+    score: game.scores[i],
+    result: game.result,
+  }));
+
+  const stmt = db.prepare(
+    "INSERT INTO game_results (id, game_id, player_id, player_name, score, result) VALUES (?, ?, ?, ?, ?, ?)",
+  );
+  for (const r of results) {
+    stmt.run(r.id, r.gameId, r.playerId, r.playerName, r.score, r.result);
+  }
+}
+
+export interface GameHistoryEntry {
+  game_id: string;
+  player_name: string;
+  score: number;
+  result: string;
+  finished_at: string;
+}
+
+export function getGameHistory(limit = 20): GameHistoryEntry[] {
+  return db.prepare(
+    "SELECT game_id, player_name, score, result, finished_at FROM game_results ORDER BY finished_at DESC LIMIT ?",
+  ).all(limit) as GameHistoryEntry[];
+}
+
+export function getGameHistoryByUser(userId: string, limit = 20): GameHistoryEntry[] {
+  return db.prepare(
+    "SELECT game_id, player_name, score, result, finished_at FROM game_results WHERE player_id = ? ORDER BY finished_at DESC LIMIT ?",
+  ).all(userId, limit) as GameHistoryEntry[];
+}
+
+// --- Existing game operations ---
 
 export function saveGame(gameId: string, game: Game): void {
   const board = JSON.stringify(game.board);
