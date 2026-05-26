@@ -21,7 +21,7 @@ COPY --from=frontend-builder /app/frontend/dist frontend/dist
 RUN cd backend && bun install --production
 
 # Expose the port
-EXPOSE 8000
+EXPOSE 3000
 
 # Run the server
 CMD ["bun", "run", "backend/server.ts"]

@@ -1,27 +1,18 @@
-version: '3.8'
-
 services:
   game-server:
     build:
       context: .
       dockerfile: DOCKERFILE
     container_name: minus8-game-server
-    ports:
-      - "8000:8000"
+    network_mode: host
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8000/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
     environment:
       - NODE_ENV=production
-      - PORT=8000
-    networks:
-      - game-network
+      - PORT=3000
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
-
-networks:
-  game-network:
-    driver: bridge

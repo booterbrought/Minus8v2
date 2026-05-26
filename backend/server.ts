@@ -42,7 +42,7 @@ app.get("/*", serveStatic({ root: "./frontend/dist" }));
 app.get("/*", serveStatic({ root: "./frontend/dist", path: "index.html" }));
 
 // Start the Server
-const PORT = 8000;
+const PORT = 3000;
 
 const certPath = "/etc/letsencrypt/live/dmbr.lv/fullchain.pem";
 const keyPath = "/etc/letsencrypt/live/dmbr.lv/privkey.pem";
@@ -62,6 +62,7 @@ if (certExists && keyExists) {
       fetch: app.fetch,
       websocket,
       port: PORT,
+      hostname: "127.0.0.1",
       tls: {
         cert: await certFile.text(),
         key: await keyFile.text(),
@@ -74,6 +75,7 @@ if (certExists && keyExists) {
       fetch: app.fetch,
       websocket,
       port: PORT,
+      hostname: "127.0.0.1",
     });
   }
 } else {
@@ -82,6 +84,7 @@ if (certExists && keyExists) {
     fetch: app.fetch,
     websocket,
     port: PORT,
+    hostname: "127.0.0.1",
   });
 }
 
