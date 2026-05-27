@@ -16,3 +16,15 @@ export const authMiddleware = async (c: Context, next: Next) => {
   c.set("username", user.username);
   await next();
 };
+
+export const optionalAuthMiddleware = async (c: Context, next: Next) => {
+  const token = c.req.header("Authorization");
+  if (token) {
+    const user = getUserById(token);
+    if (user) {
+      c.set("userId", user.id);
+      c.set("username", user.username);
+    }
+  }
+  await next();
+};

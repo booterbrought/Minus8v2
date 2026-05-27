@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { createGame } from "../controllers/lobbyController";
-import { authMiddleware } from "../middleware/authMiddleware";
+import { optionalAuthMiddleware } from "../middleware/authMiddleware";
 
 const router = new Hono();
 
 router
-  .post("/api/game", authMiddleware, createGame);
+  .post("/api/game", optionalAuthMiddleware, createGame);
 
 export default router;
