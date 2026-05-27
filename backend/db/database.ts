@@ -4,7 +4,7 @@ import { Game, Player, GameResult } from "../models/gameState";
 let db: Database;
 
 export function initDb(): void {
-  db = new Database("backend/db/games.db");
+  db = new Database(import.meta.dir + "/data/games.db");
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
 

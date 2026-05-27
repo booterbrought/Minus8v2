@@ -7,7 +7,7 @@ services:
     network_mode: host
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -16,3 +16,4 @@ services:
       - PORT=3000
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
+      - ./data:/app/backend/db/data

@@ -11,8 +11,8 @@
     <!-- Not logged in: auth + guest -->
     <div v-else class="mb-5 space-y-3">
       <div class="flex gap-2">
-        <input v-model="authUsername" type="text" placeholder="Username" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
-        <input v-model="authPassword" type="password" placeholder="Password" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
+        <input v-model="authUsername" @keyup.enter="handleLogin" type="text" placeholder="Username" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
+        <input v-model="authPassword" @keyup.enter="handleLogin" type="password" placeholder="Password" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
       </div>
       <div class="flex gap-2">
         <button @click="handleLogin" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Login</button>

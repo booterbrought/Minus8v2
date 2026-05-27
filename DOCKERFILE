@@ -17,8 +17,8 @@ COPY backend/ backend/
 # Copy built frontend files from previous stage
 COPY --from=frontend-builder /app/frontend/dist frontend/dist
 
-# Install backend dependencies
-RUN cd backend && bun install --production
+# Install backend dependencies and curl for healthcheck
+RUN cd backend && bun install --production && apk add --no-cache curl
 
 # Expose the port
 EXPOSE 3000
