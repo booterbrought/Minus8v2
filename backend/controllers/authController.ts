@@ -21,7 +21,7 @@ export const register = async (c: Context) => {
   const hash = await Bun.password.hash(password);
   registerUser(id, name, hash);
 
-  return c.json({ token: id, userId: id, username: name });
+  return c.json({ token: id, userId: id, username: name, elo: 1000 });
 };
 
 export const login = async (c: Context) => {
@@ -37,5 +37,5 @@ export const login = async (c: Context) => {
     return c.json({ error: "Invalid username or password" }, 401);
   }
 
-  return c.json({ token: user.id, userId: user.id, username: user.username });
+  return c.json({ token: user.id, userId: user.id, username: user.username, elo: user.elo });
 };

@@ -2,7 +2,7 @@
   <div v-if="gameService.gameState.value" class="game">
     <div class="game-header">
       <h2 v-if="gameService.gameState.value.status === 'waiting'" @click="copyGameId" class="game-id">{{ copyText }}</h2>
-      <ScorePanel :game-state="gameService.gameState.value" />
+      <ScorePanel :game-state="gameService.gameState.value" @click-player="onClickPlayer" />
     </div>
     <div class="game-board-container">
       <Board :game-state="gameService.gameState.value" @make-move="(row, col) => gameService.makeMove(row, col)" />
@@ -18,6 +18,11 @@
         <button @click="goToMenu" class="play-again-btn">Play Again</button>
       </div>
     </div>
+    <ProfilePopup
+      v-if="profileUserId"
+      :user-id="profileUserId"
+      @close="profileUserId = null"
+    />
   </div>
 </template>
 
@@ -27,6 +32,7 @@ import { useRoute, useRouter } from 'vue-router';
 import Board from './Board.vue';
 import { GameService, fetchGameState } from '../services/game';
 import ScorePanel from './ScorePanel.vue';
+import ProfilePopup from './ProfilePopup.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -35,6 +41,7 @@ const gameId = route.params.id as string;
 const gameService = new GameService(gameId, await fetchGameState(gameId));
 
 const copyText = ref('Click to copy invite link');
+const profileUserId = ref<string | null>(null);
 
 const gameOverText = computed(() => {
   const state = gameService.gameState.value;
@@ -47,6 +54,10 @@ const gameOverText = computed(() => {
 function goToMenu() {
   gameService.wsDisconnect();
   router.push('/');
+}
+
+function onClickPlayer(userId: string) {
+  profileUserId.value = userId;
 }
 
 onMounted(() => {

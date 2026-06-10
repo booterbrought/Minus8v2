@@ -31,7 +31,7 @@ export async function fetchGameState(gameId: string): Promise<GameState> {
 }
 
 export interface GameState {
-  players: { id: string; name: string }[];
+  players: { id: string; name: string; userId?: string }[];
   currentTurn: number;
   board: number[][];
   currentCell: [number, number];

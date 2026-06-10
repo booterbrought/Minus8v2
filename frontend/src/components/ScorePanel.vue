@@ -3,7 +3,10 @@
     <div class="scores">
       <div v-for="(player, index) in gameState.players" :key="player.id">
         <div class="player-score" :class="gameState.currentTurn === index ? 'active' : ''">
-          <span>{{ player.name }}</span>: <span>{{ gameState.scores[index] }}</span>
+          <span
+            :class="player.userId ? 'cursor-pointer hover:text-indigo-400 underline' : ''"
+            @click="player.userId && $emit('clickPlayer', player.userId)"
+          >{{ player.name }}</span>: <span>{{ gameState.scores[index] }}</span>
         </div>
       </div>
     </div>
@@ -15,6 +18,10 @@ import type { GameState } from '../services/game';
 
 defineProps<{
   gameState: GameState;
+}>();
+
+defineEmits<{
+  clickPlayer: [userId: string];
 }>();
 </script>
 

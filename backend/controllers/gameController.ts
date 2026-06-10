@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { Game } from "../models/gameState";
 import { wsConnections } from "../routes/ws";
-import { saveGame, saveGameResult, getGameHistory, getGameHistoryByUser } from "../db/database";
+import { saveGame, saveGameResult, getGameHistory, getGameHistoryByUser, calculateAndUpdateElo, getRecentGames, getLeaderboard, getUserProfile } from "../db/database";
 
 export const gameList: Map<string, Game> = new Map();
 
@@ -80,8 +80,9 @@ export const joinGame = async (c: Context) => {
     return c.json({ error: "Name must be 1-30 characters" }, 400);
   }
 
+  const userId = c.get("userId") || undefined;
   const playerId = crypto.randomUUID();
-  game.addPlayer({ id: playerId, name });
+  game.addPlayer({ id: playerId, name, userId });
   saveGame(gameId, game);
   notifyPlayers(game);
 
@@ -102,6 +103,7 @@ function checkGameEnd(game: Game, gameId: string) {
     game.status = "finished";
     game.result = game.determineResult();
     saveGameResult(gameId, game);
+    calculateAndUpdateElo(game);
   }
 }
 
@@ -153,4 +155,21 @@ export const history = (c: Context) => {
     return c.json(getGameHistoryByUser(userId));
   }
   return c.json(getGameHistory());
+};
+
+export const recentGames = (c: Context) => {
+  return c.json(getRecentGames());
+};
+
+export const profile = (c: Context) => {
+  const userId = c.req.param("userId");
+  const profile = getUserProfile(userId);
+  if (!profile) {
+    return c.json({ error: "User not found" }, 404);
+  }
+  return c.json(profile);
+};
+
+export const leaderboard = (c: Context) => {
+  return c.json(getLeaderboard());
 };

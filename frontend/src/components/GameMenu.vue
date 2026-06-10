@@ -4,7 +4,10 @@
 
     <!-- Logged in state -->
     <div v-if="userStore.token" class="user-info mb-5">
-      <p class="text-gray-200 mb-2">Welcome, <span class="font-semibold">{{ userStore.username }}</span></p>
+      <p class="text-gray-200 mb-2">
+        Welcome, <span class="font-semibold">{{ userStore.username }}</span>
+        <span v-if="userStore.elo" class="text-indigo-400"> ({{ userStore.elo }})</span>
+      </p>
       <button @click="logout" class="text-sm text-gray-400 hover:text-gray-200 underline">Logout</button>
     </div>
 
@@ -24,7 +27,7 @@
         <div class="flex-grow border-t border-gray-600"></div>
       </div>
       <div class="flex gap-2">
-        <input v-model="guestName" type="text" placeholder="Your name" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
+        <input v-model="guestName" @keyup.enter="playAsGuest" type="text" placeholder="Your name" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
         <button @click="playAsGuest" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Guest</button>
       </div>
     </div>
@@ -42,17 +45,42 @@
       </div>
     </div>
 
-    <!-- Game history -->
-    <div v-if="history.length" class="mt-6 text-left">
+    <!-- Recent games -->
+    <div v-if="recentGames.length" class="mt-6 text-left">
       <h3 class="text-lg font-semibold text-gray-200 mb-2">Recent Games</h3>
-      <div class="space-y-1 text-sm max-h-48 overflow-y-auto">
-        <div v-for="entry in history" :key="entry.game_id + entry.player_name" class="flex justify-between text-gray-300 bg-gray-700 rounded px-3 py-1">
-          <span>{{ entry.player_name }}</span>
-          <span>{{ entry.score }}</span>
-          <span>{{ entry.result === 'draw' ? 'Draw' : entry.result === 'player1_wins' ? 'P1 Win' : 'P2 Win' }}</span>
+      <div class="space-y-1 text-sm max-h-64 overflow-y-auto">
+        <div
+          v-for="game in recentGames"
+          :key="game.game_id"
+          class="bg-gray-700 rounded px-3 py-2 flex justify-between items-center"
+          :class="{ 'border border-indigo-500': isOwnGame(game) }"
+        >
+          <div class="flex flex-col gap-0.5">
+            <div class="flex items-center gap-1">
+              <span
+                :class="['font-semibold', game.p1_user_id ? 'cursor-pointer hover:text-indigo-400 underline' : 'text-gray-300']"
+                @click.stop="game.p1_user_id && openProfile(game.p1_user_id)"
+              >{{ game.p1_name }}</span>
+              <span class="text-gray-500">{{ game.p1_score }}</span>
+              <span class="text-gray-600 mx-1">vs</span>
+              <span
+                :class="['font-semibold', game.p2_user_id ? 'cursor-pointer hover:text-indigo-400 underline' : 'text-gray-300']"
+                @click.stop="game.p2_user_id && openProfile(game.p2_user_id)"
+              >{{ game.p2_name }}</span>
+              <span class="text-gray-500">{{ game.p2_score }}</span>
+            </div>
+          </div>
+          <span class="text-xs text-gray-400 ml-2">{{ resultLabel(game.result) }}</span>
         </div>
       </div>
     </div>
+
+    <!-- Profile popup -->
+    <ProfilePopup
+      v-if="profileUserId"
+      :user-id="profileUserId"
+      @close="profileUserId = null"
+    />
   </div>
 </template>
 
@@ -60,6 +88,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
+import ProfilePopup from './ProfilePopup.vue';
 
 const router = useRouter();
 const gameId = ref('');
@@ -67,13 +96,28 @@ const userStore = useUserStore();
 const authUsername = ref('');
 const authPassword = ref('');
 const guestName = ref('');
-const history = ref<any[]>([]);
+const recentGames = ref<any[]>([]);
+const profileUserId = ref<string | null>(null);
 
 onMounted(() => {
   const id = router.currentRoute.value.params.id as string;
   if (id) gameId.value = id;
-  if (userStore.token) loadHistory();
+  loadRecentGames();
 });
+
+function openProfile(userId: string) {
+  profileUserId.value = userId;
+}
+
+function resultLabel(result: string): string {
+  if (result === 'draw') return 'Draw';
+  return result === 'player1_wins' ? 'P1 Win' : 'P2 Win';
+}
+
+function isOwnGame(game: any): boolean {
+  if (!userStore.token) return false;
+  return game.p1_user_id === userStore.token || game.p2_user_id === userStore.token;
+}
 
 const handleLogin = async () => {
   if (!authUsername.value.trim() || !authPassword.value) return;
@@ -87,7 +131,8 @@ const handleLogin = async () => {
       const data = await res.json();
       userStore.setToken(data.token);
       userStore.setUsername(data.username);
-      loadHistory();
+      userStore.setElo(data.elo);
+      loadRecentGames();
     } else {
       const err = await res.json();
       alert(err.error || 'Login failed');
@@ -109,7 +154,8 @@ const handleRegister = async () => {
       const data = await res.json();
       userStore.setToken(data.token);
       userStore.setUsername(data.username);
-      loadHistory();
+      userStore.setElo(data.elo);
+      loadRecentGames();
     } else {
       const err = await res.json();
       alert(err.error || 'Registration failed');
@@ -123,17 +169,19 @@ const playAsGuest = () => {
   const name = guestName.value.trim();
   if (!name) { alert('Please enter your name'); return; }
   userStore.setUsername(name);
+  loadRecentGames();
 };
 
 const logout = () => {
   userStore.clearUser();
-  history.value = [];
+  recentGames.value = [];
+  loadRecentGames();
 };
 
-const loadHistory = async () => {
+const loadRecentGames = async () => {
   try {
-    const res = await fetch(`/api/history/${userStore.token}`);
-    if (res.ok) history.value = await res.json();
+    const res = await fetch('/api/history/recent');
+    if (res.ok) recentGames.value = await res.json();
   } catch { /* ignore */ }
 };
 

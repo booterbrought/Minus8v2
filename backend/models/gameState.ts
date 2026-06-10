@@ -1,6 +1,7 @@
 export interface Player {
   id: string;
   name: string;
+  userId?: string;
 }
 
 export type GameResult = "" | "player1_wins" | "player2_wins" | "draw";
