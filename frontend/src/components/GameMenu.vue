@@ -52,25 +52,23 @@
         <div
           v-for="game in recentGames"
           :key="game.game_id"
-          class="bg-gray-700 rounded px-3 py-2 flex justify-between items-center"
-          :class="{ 'border border-indigo-500': isOwnGame(game) }"
+          class="rounded px-3 py-2 flex justify-between items-center"
+          :class="rowClass(game)"
         >
-          <div class="flex flex-col gap-0.5">
-            <div class="flex items-center gap-1">
-              <span
-                :class="['font-semibold', game.p1_user_id ? 'cursor-pointer hover:text-indigo-400 underline' : 'text-gray-300']"
-                @click.stop="game.p1_user_id && openProfile(game.p1_user_id)"
-              >{{ game.p1_name }}</span>
-              <span class="text-gray-500">{{ game.p1_score }}</span>
-              <span class="text-gray-600 mx-1">vs</span>
-              <span
-                :class="['font-semibold', game.p2_user_id ? 'cursor-pointer hover:text-indigo-400 underline' : 'text-gray-300']"
-                @click.stop="game.p2_user_id && openProfile(game.p2_user_id)"
-              >{{ game.p2_name }}</span>
-              <span class="text-gray-500">{{ game.p2_score }}</span>
-            </div>
+          <div class="flex items-center gap-1">
+            <span
+              :class="['font-semibold text-gray-200', game.p1_user_id ? 'cursor-pointer hover:text-indigo-400 underline' : '']"
+              @click.stop="game.p1_user_id && openProfile(game.p1_user_id)"
+            >{{ game.p1_name }}</span>
+            <span class="text-gray-500">{{ game.p1_score }}</span>
+            <span class="text-gray-600 mx-1">vs</span>
+            <span
+              :class="['font-semibold text-gray-200', game.p2_user_id ? 'cursor-pointer hover:text-indigo-400 underline' : '']"
+              @click.stop="game.p2_user_id && openProfile(game.p2_user_id)"
+            >{{ game.p2_name }}</span>
+            <span class="text-gray-500">{{ game.p2_score }}</span>
           </div>
-          <span class="text-xs text-gray-400 ml-2">{{ resultLabel(game.result) }}</span>
+          <span class="text-xs text-gray-400 ml-2">{{ outcomeLabel(game) }}</span>
         </div>
       </div>
     </div>
@@ -109,14 +107,31 @@ function openProfile(userId: string) {
   profileUserId.value = userId;
 }
 
-function resultLabel(result: string): string {
-  if (result === 'draw') return 'Draw';
-  return result === 'player1_wins' ? 'P1 Win' : 'P2 Win';
+function rowClass(game: any): string {
+  const persp = userStore.token;
+  const o = gameOutcome(game, persp);
+  if (!persp || !o) return 'bg-gray-700';
+  if (o === 'win') return 'bg-green-900/30 border-l-2 border-green-500';
+  if (o === 'lose') return 'bg-red-900/30 border-l-2 border-red-500';
+  return 'bg-yellow-900/30 border-l-2 border-yellow-500';
 }
 
-function isOwnGame(game: any): boolean {
-  if (!userStore.token) return false;
-  return game.p1_user_id === userStore.token || game.p2_user_id === userStore.token;
+function gameOutcome(game: any, userId: string | null): 'win' | 'lose' | 'draw' | null {
+  if (game.result === 'draw') return 'draw';
+  if (!userId) return null;
+  if (game.p1_user_id === userId) return game.result === 'player1_wins' ? 'win' : 'lose';
+  if (game.p2_user_id === userId) return game.result === 'player2_wins' ? 'win' : 'lose';
+  return null;
+}
+
+function outcomeLabel(game: any): string {
+  const persp = userStore.token;
+  const o = gameOutcome(game, persp);
+  if (o === 'win') return 'Win';
+  if (o === 'lose') return 'Lose';
+  if (o === 'draw') return 'Draw';
+  if (game.result === 'player1_wins') return game.p1_name;
+  return game.p2_name;
 }
 
 const handleLogin = async () => {

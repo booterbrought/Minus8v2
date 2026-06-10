@@ -37,14 +37,15 @@
               <div
                 v-for="game in profile.recentGames"
                 :key="game.game_id"
-                class="flex justify-between text-gray-300 bg-gray-800 rounded px-2 py-1"
+                class="flex justify-between rounded px-2 py-1"
+                :class="rowClass(game)"
               >
-                <span class="flex gap-1">
+                <span class="flex gap-1 text-gray-200">
                   <span>{{ game.p1_name }} {{ game.p1_score }}</span>
                   <span class="text-gray-600">vs</span>
                   <span>{{ game.p2_name }} {{ game.p2_score }}</span>
                 </span>
-                <span class="text-gray-500">{{ resultLabel(game.result) }}</span>
+                <span class="text-gray-400">{{ outcomeLabel(game) }}</span>
               </div>
             </div>
           </div>
@@ -87,9 +88,24 @@ async function loadProfile() {
   }
 }
 
-function resultLabel(result: string): string {
-  if (result === 'draw') return 'Draw';
-  return result === 'player1_wins' ? 'P1' : 'P2';
+function rowClass(game: any): string {
+  const o = gameOutcome(game);
+  if (o === 'win') return 'bg-green-900/30 border-l-2 border-green-500';
+  if (o === 'lose') return 'bg-red-900/30 border-l-2 border-red-500';
+  return 'bg-yellow-900/30 border-l-2 border-yellow-500';
+}
+
+function gameOutcome(game: any): 'win' | 'lose' | 'draw' {
+  if (game.result === 'draw') return 'draw';
+  if (game.p1_user_id === props.userId) return game.result === 'player1_wins' ? 'win' : 'lose';
+  return game.result === 'player2_wins' ? 'win' : 'lose';
+}
+
+function outcomeLabel(game: any): string {
+  const o = gameOutcome(game);
+  if (o === 'win') return 'Win';
+  if (o === 'lose') return 'Lose';
+  return 'Draw';
 }
 
 function onKeydown(e: KeyboardEvent) {
