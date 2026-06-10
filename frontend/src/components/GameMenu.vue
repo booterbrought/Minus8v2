@@ -79,7 +79,10 @@
             >{{ game.p2_name }}</span>
             <span class="text-gray-500">{{ game.p2_score }}</span>
           </div>
-          <span class="text-xs text-gray-400 ml-2">{{ outcomeLabel(game) }}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">{{ outcomeLabel(game) }}</span>
+            <span v-if="eloChange(game) !== null" :class="['text-xs', eloChange(game)! > 0 ? 'text-green-400' : 'text-red-400']">{{ eloChange(game)! > 0 ? '+' : '' }}{{ eloChange(game) }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -167,6 +170,7 @@ function cellStyle(value: number | null): Record<string, string> {
 onMounted(() => {
   const id = router.currentRoute.value.params.id as string;
   if (id) gameId.value = id;
+  if (userStore.token) refreshElo();
   calcGrid();
   window.addEventListener('resize', calcGrid);
   schedulePop();
@@ -209,6 +213,14 @@ function outcomeLabel(game: any): string {
   return game.p2_name;
 }
 
+function eloChange(game: any): number | null {
+  const persp = userStore.token;
+  if (!persp) return null;
+  if (game.p1_user_id === persp) return game.p1_elo_change ?? null;
+  if (game.p2_user_id === persp) return game.p2_elo_change ?? null;
+  return null;
+}
+
 const handleLogin = async () => {
   if (!authUsername.value.trim() || !authPassword.value) return;
   try {
@@ -222,6 +234,7 @@ const handleLogin = async () => {
       userStore.setToken(data.token);
       userStore.setUsername(data.username);
       userStore.setElo(data.elo);
+      refreshElo();
       loadRecentGames();
     } else {
       const err = await res.json();
@@ -245,6 +258,7 @@ const handleRegister = async () => {
       userStore.setToken(data.token);
       userStore.setUsername(data.username);
       userStore.setElo(data.elo);
+      refreshElo();
       loadRecentGames();
     } else {
       const err = await res.json();
@@ -272,6 +286,17 @@ const loadRecentGames = async () => {
   try {
     const res = await fetch('/api/history/recent');
     if (res.ok) recentGames.value = await res.json();
+  } catch { /* ignore */ }
+};
+
+const refreshElo = async () => {
+  if (!userStore.token) return;
+  try {
+    const res = await fetch(`/api/profile/${userStore.token}`);
+    if (res.ok) {
+      const data = await res.json();
+      userStore.setElo(data.elo);
+    }
   } catch { /* ignore */ }
 };
 

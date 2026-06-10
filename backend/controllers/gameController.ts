@@ -103,7 +103,7 @@ function checkGameEnd(game: Game, gameId: string) {
     game.status = "finished";
     game.result = game.determineResult();
     saveGameResult(gameId, game);
-    calculateAndUpdateElo(game);
+    calculateAndUpdateElo(game, gameId);
   }
 }
 

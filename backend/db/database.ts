@@ -53,6 +53,7 @@ export function initDb(): void {
       player_name TEXT NOT NULL,
       turn_order INTEGER NOT NULL DEFAULT 0,
       score INTEGER NOT NULL,
+      elo_change INTEGER,
       result TEXT NOT NULL,
       finished_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
@@ -73,6 +74,9 @@ export function initDb(): void {
   }
   if (!cols("game_results").some((c) => c.name === "turn_order")) {
     db.exec("ALTER TABLE game_results ADD COLUMN turn_order INTEGER NOT NULL DEFAULT 0");
+  }
+  if (!cols("game_results").some((c) => c.name === "elo_change")) {
+    db.exec("ALTER TABLE game_results ADD COLUMN elo_change INTEGER");
   }
 
   console.log("Database initialized");
@@ -137,10 +141,15 @@ export function saveGameResult(gameId: string, game: Game): void {
   }
 }
 
-export function calculateAndUpdateElo(game: Game): void {
+export interface EloChange {
+  p0Change: number;
+  p1Change: number;
+}
+
+export function calculateAndUpdateElo(game: Game, gameId: string): EloChange | null {
   const p0 = game.players[0];
   const p1 = game.players[1];
-  if (!p0.userId || !p1.userId) return;
+  if (!p0.userId || !p1.userId) return null;
 
   const elo0 = getUserElo(p0.userId);
   const elo1 = getUserElo(p1.userId);
@@ -155,8 +164,18 @@ export function calculateAndUpdateElo(game: Game): void {
   const actual1 = 1 - actual0;
 
   const K = 32;
-  updateUserElo(p0.userId, elo0 + K * (actual0 - expected0));
-  updateUserElo(p1.userId, elo1 + K * (actual1 - expected1));
+  const change0 = Math.round(K * (actual0 - expected0));
+  const change1 = Math.round(K * (actual1 - expected1));
+
+  updateUserElo(p0.userId, elo0 + change0);
+  updateUserElo(p1.userId, elo1 + change1);
+
+  db.prepare("UPDATE game_results SET elo_change = ? WHERE game_id = ? AND player_id = ?")
+    .run(change0, gameId, p0.id);
+  db.prepare("UPDATE game_results SET elo_change = ? WHERE game_id = ? AND player_id = ?")
+    .run(change1, gameId, p1.id);
+
+  return { p0Change: change0, p1Change: change1 };
 }
 
 export interface GameHistoryEntry {
@@ -185,9 +204,11 @@ export interface RecentGameEntry {
   p1_name: string;
   p1_user_id: string | null;
   p1_score: number;
+  p1_elo_change: number | null;
   p2_name: string;
   p2_user_id: string | null;
   p2_score: number;
+  p2_elo_change: number | null;
   result: string;
   finished_at: string;
 }
@@ -199,9 +220,11 @@ export function getRecentGames(limit = 20): RecentGameEntry[] {
       a.player_name AS p1_name,
       a.user_id AS p1_user_id,
       a.score AS p1_score,
+      a.elo_change AS p1_elo_change,
       b.player_name AS p2_name,
       b.user_id AS p2_user_id,
       b.score AS p2_score,
+      b.elo_change AS p2_elo_change,
       a.result,
       a.finished_at
     FROM game_results a
@@ -254,9 +277,11 @@ export function getUserProfile(userId: string): UserProfile | null {
       a.player_name AS p1_name,
       a.user_id AS p1_user_id,
       a.score AS p1_score,
+      a.elo_change AS p1_elo_change,
       b.player_name AS p2_name,
       b.user_id AS p2_user_id,
       b.score AS p2_score,
+      b.elo_change AS p2_elo_change,
       a.result,
       a.finished_at
     FROM game_results a

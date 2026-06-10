@@ -45,7 +45,10 @@
                   <span class="text-gray-600">vs</span>
                   <span>{{ game.p2_name }} {{ game.p2_score }}</span>
                 </span>
-                <span class="text-gray-400">{{ outcomeLabel(game) }}</span>
+                <span class="flex items-center gap-2">
+                  <span class="text-gray-400">{{ outcomeLabel(game) }}</span>
+                  <span v-if="eloChange(game) !== null" :class="['text-xs', eloChange(game)! > 0 ? 'text-green-400' : 'text-red-400']">{{ eloChange(game)! > 0 ? '+' : '' }}{{ eloChange(game) }}</span>
+                </span>
               </div>
             </div>
           </div>
@@ -106,6 +109,12 @@ function outcomeLabel(game: any): string {
   if (o === 'win') return 'Win';
   if (o === 'lose') return 'Lose';
   return 'Draw';
+}
+
+function eloChange(game: any): number | null {
+  if (game.p1_user_id === props.userId) return game.p1_elo_change ?? null;
+  if (game.p2_user_id === props.userId) return game.p2_elo_change ?? null;
+  return null;
 }
 
 function onKeydown(e: KeyboardEvent) {
