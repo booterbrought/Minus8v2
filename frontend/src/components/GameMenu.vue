@@ -1,4 +1,15 @@
 <template>
+  <div
+    class="fancy-bg"
+    :style="{ gridTemplateColumns: `repeat(${fancyCols}, 1fr)` }"
+  >
+    <div
+      v-for="(cell, i) in fancyBoard"
+      :key="i"
+      class="fancy-cell"
+      :style="cellStyle(cell)"
+    >{{ cell !== null ? (cell > 0 ? '+' + cell : String(cell)) : '' }}</div>
+  </div>
   <div class="game-menu max-w-md mx-auto text-center">
     <h2 class="text-2xl font-bold mb-4 text-gray-200">Minus 8!</h2>
 
@@ -14,8 +25,8 @@
     <!-- Not logged in: auth + guest -->
     <div v-else class="mb-5 space-y-3">
       <div class="flex gap-2">
-        <input v-model="authUsername" @keyup.enter="handleLogin" type="text" placeholder="Username" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
-        <input v-model="authPassword" @keyup.enter="handleLogin" type="password" placeholder="Password" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
+        <input v-model="authUsername" @keyup.enter="handleLogin" type="text" placeholder="Username" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
+        <input v-model="authPassword" @keyup.enter="handleLogin" type="password" placeholder="Password" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
       </div>
       <div class="flex gap-2">
         <button @click="handleLogin" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Login</button>
@@ -27,7 +38,7 @@
         <div class="flex-grow border-t border-gray-600"></div>
       </div>
       <div class="flex gap-2">
-        <input v-model="guestName" @keyup.enter="playAsGuest" type="text" placeholder="Your name" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
+        <input v-model="guestName" @keyup.enter="playAsGuest" type="text" placeholder="Your name" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
         <button @click="playAsGuest" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Guest</button>
       </div>
     </div>
@@ -38,7 +49,7 @@
         Create New Game
       </button>
       <div class="flex gap-2">
-        <input v-model="gameId" placeholder="Enter Game ID" class="flex-1 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
+        <input v-model="gameId" placeholder="Enter Game ID" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
         <button @click="joinGame" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
           Join Game
         </button>
@@ -83,9 +94,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
+import { interpolateColor } from '../utils/colorInterpolation';
 import ProfilePopup from './ProfilePopup.vue';
 
 const router = useRouter();
@@ -96,11 +108,74 @@ const authPassword = ref('');
 const guestName = ref('');
 const recentGames = ref<any[]>([]);
 const profileUserId = ref<string | null>(null);
+const fancyBoard = ref<(number | null)[]>([]);
+const fancyCols = ref(0);
+let popTimer: ReturnType<typeof setTimeout> | null = null;
+
+function schedulePop() {
+  popTimer = setTimeout(() => {
+    popRandomCells();
+    schedulePop();
+  }, 800 + Math.random() * 700);
+}
+
+function calcGrid() {
+  const size = window.innerWidth < 480 ? 56 : window.innerWidth < 1024 ? 68 : 80;
+  fancyCols.value = Math.ceil(window.innerWidth / size);
+  const rows = Math.ceil(window.innerHeight / size);
+  fancyBoard.value = generateFancyBoard(rows, fancyCols.value);
+}
+
+function generateFancyBoard(rows: number, cols: number) {
+  const board: (number | null)[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      board.push(Math.random() < 0.5 ? randomCellValue() : null);
+    }
+  }
+  return board;
+}
+
+function randomCellValue(): number {
+  let v = 0;
+  while (v === 0) v = Math.floor(Math.random() * 17) - 8;
+  return v;
+}
+
+function popRandomCells() {
+  const board = fancyBoard.value;
+  if (!board.length) return;
+  const count = 2 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const idx = Math.floor(Math.random() * board.length);
+    board[idx] = board[idx] === null ? randomCellValue() : null;
+  }
+  fancyBoard.value = [...board];
+}
+
+function cellStyle(value: number | null): Record<string, string> {
+  if (value === null) return { backgroundColor: 'transparent', borderColor: 'transparent', opacity: '0', transform: 'scale(0.5)' };
+  const [rr, gg, bb] = interpolateColor(value);
+  return {
+    backgroundColor: `rgba(${rr},${gg},${bb},0.2)`,
+    borderColor: `rgba(${rr},${gg},${bb},0.35)`,
+    opacity: '1',
+    transform: 'scale(1)',
+  };
+}
 
 onMounted(() => {
   const id = router.currentRoute.value.params.id as string;
   if (id) gameId.value = id;
+  calcGrid();
+  window.addEventListener('resize', calcGrid);
+  schedulePop();
   loadRecentGames();
+});
+
+onUnmounted(() => {
+  if (popTimer) clearTimeout(popTimer);
+  window.removeEventListener('resize', calcGrid);
 });
 
 function openProfile(userId: string) {
@@ -240,4 +315,50 @@ const joinGame = async () => {
 </script>
 
 <style scoped>
+.fancy-bg {
+  @apply fixed inset-0 grid z-0;
+  grid-auto-rows: 1fr;
+  pointer-events: none;
+  background: #111827;
+  padding: 4px;
+  gap: 3px;
+}
+
+.fancy-cell {
+  @apply flex items-center justify-center font-bold overflow-hidden;
+  color: rgba(255,255,255,0.55);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 20px;
+  border: 1px solid rgba(75,85,99,0.5);
+  border-radius: 4px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+  transition: opacity 0.6s ease, transform 0.6s ease, background-color 0.6s ease;
+  user-select: none;
+}
+
+@media (max-width: 480px) {
+  .fancy-cell { font-size: 16px; border-width: 0.5px; border-radius: 2px; }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .fancy-cell { font-size: 22px; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .fancy-cell { font-size: 28px; }
+}
+
+@media (min-width: 1025px) {
+  .fancy-cell { font-size: 34px; border-radius: 6px; }
+}
+
+.game-menu {
+  @apply relative z-10 bg-gray-900/95 rounded-lg p-6 mt-8 border border-gray-700;
+}
+
+@media (max-width: 640px) {
+  .game-menu {
+    @apply mt-3 mx-2;
+  }
+}
 </style>
