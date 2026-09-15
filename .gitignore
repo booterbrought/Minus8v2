@@ -27,6 +27,7 @@ node_modules/
 # Cursor rules
 .cursorrules
 .claude/settings.local.json
+.zcode/
 
 # Database persistence
 data/
