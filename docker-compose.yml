@@ -18,5 +18,7 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-}
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
+      # TLS is terminated by nginx on the host; do NOT mount /etc/letsencrypt here —
+      # if the app sees the certs it serves HTTPS on port 3000 itself and nginx's
+      # plain-HTTP upstream + the HTTP healthcheck both break (502).
       - ./data:/app/backend/db/data
