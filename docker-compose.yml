@@ -14,6 +14,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      # Telegram Mini App (optional; set in /opt/minus8-game/.env on the server)
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-}
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - ./data:/app/backend/db/data

@@ -37,6 +37,9 @@ app.route("/", gameRoutes);
 // Health check
 app.get("/api/health", (c) => c.json({ status: "healthy" }));
 
+// Frontend config (bot username used to build t.me deep links)
+app.get("/api/config", (c) => c.json({ botUsername: process.env.TELEGRAM_BOT_USERNAME || "" }));
+
 // Serve Static Frontend Files (with SPA fallback)
 app.get("/*", serveStatic({ root: "./frontend/dist" }));
 app.get("/*", serveStatic({ root: "./frontend/dist", path: "index.html" }));

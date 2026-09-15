@@ -1,10 +1,14 @@
 import { Database } from "bun:sqlite";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { Game, Player, GameResult } from "../models/gameState";
 
 let db: Database;
 
 export function initDb(): void {
-  db = new Database(import.meta.dir + "/data/games.db");
+  const dbPath = import.meta.dir + "/data/games.db";
+  mkdirSync(dirname(dbPath), { recursive: true });
+  db = new Database(dbPath);
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
 
@@ -66,6 +70,12 @@ export function initDb(): void {
   if (!cols("users").some((c) => c.name === "elo")) {
     db.exec("ALTER TABLE users ADD COLUMN elo INTEGER NOT NULL DEFAULT 1000");
   }
+  if (!cols("users").some((c) => c.name === "telegram_id")) {
+    db.exec("ALTER TABLE users ADD COLUMN telegram_id TEXT");
+  }
+  // SQLite can't add a UNIQUE column via ALTER TABLE; enforce it with an index
+  // (multiple NULLs are allowed, so password accounts are unaffected).
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)");
   if (!cols("players").some((c) => c.name === "user_id")) {
     db.exec("ALTER TABLE players ADD COLUMN user_id TEXT");
   }
@@ -102,6 +112,18 @@ export function findUserByUsername(username: string): DbUser | null {
   return db.prepare(
     "SELECT id, username, password_hash, elo, created_at FROM users WHERE username = ?",
   ).get(username) as DbUser | null;
+}
+
+export function findUserByTelegramId(telegramId: string): DbUser | null {
+  return db.prepare(
+    "SELECT id, username, password_hash, elo, created_at FROM users WHERE telegram_id = ?",
+  ).get(telegramId) as DbUser | null;
+}
+
+export function registerTelegramUser(id: string, telegramId: string, username: string): void {
+  db.prepare(
+    "INSERT INTO users (id, username, password_hash, telegram_id, elo) VALUES (?, ?, '', ?, 1000)",
+  ).run(id, username, telegramId);
 }
 
 export function getUserById(id: string): DbUser | null {

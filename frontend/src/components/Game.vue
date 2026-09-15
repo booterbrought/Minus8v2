@@ -2,6 +2,11 @@
   <div v-if="gameService.gameState.value" class="game">
     <div class="game-header">
       <h2 v-if="gameService.gameState.value.status === 'waiting'" @click="copyGameId" class="game-id">{{ copyText }}</h2>
+      <button
+        v-if="isTg && botUsername && gameService.gameState.value.status === 'waiting'"
+        @click="challengeFriend"
+        class="challenge-btn"
+      >Challenge a friend</button>
       <ScorePanel :game-state="gameService.gameState.value" @click-player="onClickPlayer" />
     </div>
     <div class="game-board-container">
@@ -31,6 +36,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Board from './Board.vue';
 import { GameService, fetchGameState } from '../services/game';
+import { isTelegram, getWebApp } from '../services/telegram';
 import ScorePanel from './ScorePanel.vue';
 import ProfilePopup from './ProfilePopup.vue';
 
@@ -39,6 +45,9 @@ const router = useRouter();
 
 const gameId = route.params.id as string;
 const gameService = new GameService(gameId, await fetchGameState(gameId));
+
+const isTg = isTelegram();
+const botUsername = ref('');
 
 const copyText = ref('Click to copy invite link');
 const profileUserId = ref<string | null>(null);
@@ -60,13 +69,30 @@ function onClickPlayer(userId: string) {
   profileUserId.value = userId;
 }
 
-onMounted(() => {
+onMounted(async () => {
   gameService.wsConnect();
+  if (isTg) {
+    const app = await getWebApp();
+    app?.ready();
+    app?.expand();
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) botUsername.value = (await res.json()).botUsername || '';
+    } catch { /* ignore */ }
+  }
 });
 
 onUnmounted(() => {
   gameService.wsDisconnect();
 });
+
+async function challengeFriend() {
+  const app = await getWebApp();
+  if (!app || !botUsername.value) return;
+  const link = `https://t.me/${botUsername.value}?startapp=${gameId}`;
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("Let's play Minus8!")}`;
+  app.openTelegramLink(shareUrl);
+}
 
 function copyGameId() {
   const inviteLink = `${window.location.origin}/menu/${gameId}`;
@@ -117,6 +143,10 @@ function fallbackCopyToClipboard(text: string) {
 
 .game-id:hover {
   @apply text-white transition-colors duration-300;
+}
+
+.challenge-btn {
+  @apply mb-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors;
 }
 
 .game {

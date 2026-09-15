@@ -22,8 +22,8 @@
       <button @click="logout" class="text-sm text-gray-400 hover:text-gray-200 underline">Logout</button>
     </div>
 
-    <!-- Not logged in: auth + guest -->
-    <div v-else class="mb-5 space-y-3">
+    <!-- Not logged in: auth + guest (hidden inside Telegram, where login is automatic) -->
+    <div v-else-if="!isTg || tgAuthState === 'failed'" class="mb-5 space-y-3">
       <div class="flex gap-2">
         <input v-model="authUsername" @keyup.enter="handleLogin" type="text" placeholder="Username" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
         <input v-model="authPassword" @keyup.enter="handleLogin" type="password" placeholder="Password" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
@@ -101,11 +101,15 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
 import { interpolateColor } from '../utils/colorInterpolation';
+import { fetchGameState } from '../services/game';
+import { isTelegram, getWebApp } from '../services/telegram';
 import ProfilePopup from './ProfilePopup.vue';
 
 const router = useRouter();
 const gameId = ref('');
 const userStore = useUserStore();
+const isTg = isTelegram();
+const tgAuthState = ref<'pending' | 'ok' | 'failed'>('pending');
 const authUsername = ref('');
 const authPassword = ref('');
 const guestName = ref('');
@@ -167,15 +171,70 @@ function cellStyle(value: number | null): Record<string, string> {
   };
 }
 
-onMounted(() => {
+onMounted(async () => {
   const id = router.currentRoute.value.params.id as string;
   if (id) gameId.value = id;
   if (userStore.token) refreshElo();
+  if (isTg) await handleTelegramLaunch();
   calcGrid();
   window.addEventListener('resize', calcGrid);
   schedulePop();
   loadRecentGames();
 });
+
+// --- Telegram Mini App (no-op in a regular browser) ---
+
+const handleTelegramLaunch = async () => {
+  const app = await getWebApp();
+  if (!app) return;
+  app.ready();
+  app.expand();
+  const startParam = app.initDataUnsafe?.start_param;
+  if (startParam) gameId.value = startParam;
+  if (!userStore.token && app.initData) {
+    const ok = await telegramLogin(app.initData);
+    if (!ok) return;
+  }
+  if (startParam && userStore.token) await acceptChallenge(startParam);
+};
+
+const telegramLogin = async (initData: string): Promise<boolean> => {
+  try {
+    const res = await fetch('/api/auth/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      userStore.setToken(data.token);
+      userStore.setUsername(data.username);
+      userStore.setElo(data.elo);
+      tgAuthState.value = 'ok';
+      refreshElo();
+      return true;
+    }
+    console.error('Telegram auth failed:', await res.json().catch(() => null));
+  } catch (e) {
+    console.error(e);
+  }
+  tgAuthState.value = 'failed';
+  return false;
+};
+
+const acceptChallenge = async (id: string) => {
+  const state = await fetchGameState(id);
+  if (state.players.some((p) => p.userId === userStore.token)) {
+    // Already sitting at this table (maybe mid-game) — go straight there.
+    router.push(`/game/${id}`);
+    return;
+  }
+  if (state.status === 'waiting' && state.players.length < 2) {
+    await joinGame();
+    return;
+  }
+  alert('This game is no longer available to join.');
+};
 
 onUnmounted(() => {
   if (popTimer) clearTimeout(popTimer);
