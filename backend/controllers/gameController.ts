@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { Game } from "../models/gameState";
 import { wsConnections } from "../routes/ws";
-import { saveGame, saveGameResult, getGameHistory, getGameHistoryByUser, calculateAndUpdateElo, getRecentGames, getLeaderboard, getUserProfile } from "../db/database";
+import { saveGame, saveGameResult, getGameHistory, getGameHistoryByUser, calculateAndUpdateElo, getRecentGames, getRecentGamesByUser, getLeaderboard, getUserProfile } from "../db/database";
 
 export const gameList: Map<string, Game> = new Map();
 
@@ -158,6 +158,10 @@ export const history = (c: Context) => {
 };
 
 export const recentGames = (c: Context) => {
+  const userId = c.get("userId");
+  if (userId) {
+    return c.json(getRecentGamesByUser(userId));
+  }
   return c.json(getRecentGames());
 };
 

@@ -22,8 +22,9 @@
       <button @click="logout" class="text-sm text-gray-400 hover:text-gray-200 underline">Logout</button>
     </div>
 
-    <!-- Not logged in: auth + guest (hidden inside Telegram, where login is automatic) -->
-    <div v-else-if="!isTg || tgAuthState === 'failed'" class="mb-5 space-y-3">
+    <!-- Not logged in: auth + guest. Shown briefly inside Telegram during
+         auto-login, and as fallback if that fails. -->
+    <div v-else class="mb-5 space-y-3">
       <div class="flex gap-2">
         <input v-model="authUsername" @keyup.enter="handleLogin" type="text" placeholder="Username" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
         <input v-model="authPassword" @keyup.enter="handleLogin" type="password" placeholder="Password" class="flex-1 min-w-0 border rounded px-2 py-1 bg-gray-700 border-gray-600 text-gray-200" />
@@ -109,7 +110,6 @@ const router = useRouter();
 const gameId = ref('');
 const userStore = useUserStore();
 const isTg = isTelegram();
-const tgAuthState = ref<'pending' | 'ok' | 'failed'>('pending');
 const authUsername = ref('');
 const authPassword = ref('');
 const guestName = ref('');
@@ -210,15 +210,16 @@ const telegramLogin = async (initData: string): Promise<boolean> => {
       userStore.setToken(data.token);
       userStore.setUsername(data.username);
       userStore.setElo(data.elo);
-      tgAuthState.value = 'ok';
       refreshElo();
       return true;
     }
-    console.error('Telegram auth failed:', await res.json().catch(() => null));
+    const err = await res.json().catch(() => null);
+    console.error('Telegram auth failed:', err);
+    alert(err?.error || 'Telegram login failed');
   } catch (e) {
     console.error(e);
+    alert('Telegram login failed');
   }
-  tgAuthState.value = 'failed';
   return false;
 };
 
@@ -342,8 +343,15 @@ const logout = () => {
 };
 
 const loadRecentGames = async () => {
+  // Only show the current user's own games; guests see nothing here.
+  if (!userStore.token) {
+    recentGames.value = [];
+    return;
+  }
   try {
-    const res = await fetch('/api/history/recent');
+    const res = await fetch(`/api/history/recent`, {
+      headers: { Authorization: userStore.token },
+    });
     if (res.ok) recentGames.value = await res.json();
   } catch { /* ignore */ }
 };

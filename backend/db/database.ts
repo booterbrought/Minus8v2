@@ -256,6 +256,28 @@ export function getRecentGames(limit = 20): RecentGameEntry[] {
   `).all(limit) as RecentGameEntry[];
 }
 
+export function getRecentGamesByUser(userId: string, limit = 20): RecentGameEntry[] {
+  return db.prepare(`
+    SELECT
+      a.game_id,
+      a.player_name AS p1_name,
+      a.user_id AS p1_user_id,
+      a.score AS p1_score,
+      a.elo_change AS p1_elo_change,
+      b.player_name AS p2_name,
+      b.user_id AS p2_user_id,
+      b.score AS p2_score,
+      b.elo_change AS p2_elo_change,
+      a.result,
+      a.finished_at
+    FROM game_results a
+    JOIN game_results b ON a.game_id = b.game_id AND a.turn_order = 0 AND b.turn_order = 1
+    WHERE a.user_id = ? OR b.user_id = ?
+    ORDER BY a.finished_at DESC
+    LIMIT ?
+  `).all(userId, userId, limit) as RecentGameEntry[];
+}
+
 export interface UserStats {
   wins: number;
   losses: number;
