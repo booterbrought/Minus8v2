@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 import { createBunWebSocket } from "hono/bun";
+import type { Context } from "hono";
 import authRoutes from "./routes/authRoutes";
 import lobbyRoutes from "./routes/lobbyRoutes";
 import gameRoutes from "./routes/gameRoutes";
@@ -40,9 +41,16 @@ app.get("/api/health", (c) => c.json({ status: "healthy" }));
 // Frontend config (bot username used to build t.me deep links)
 app.get("/api/config", (c) => c.json({ botUsername: process.env.TELEGRAM_BOT_USERNAME || "" }));
 
-// Serve Static Frontend Files (with SPA fallback)
-app.get("/*", serveStatic({ root: "./frontend/dist" }));
-app.get("/*", serveStatic({ root: "./frontend/dist", path: "index.html" }));
+// Serve Static Frontend Files (with SPA fallback).
+// index.html must always be revalidated — hashed assets are safe to cache,
+// but a cached index.html makes clients run stale JS bundles for ages.
+const markIndexNoCache = (path: string, c: Context) => {
+  if (path.endsWith("index.html")) {
+    c.header("Cache-Control", "no-cache");
+  }
+};
+app.get("/*", serveStatic({ root: "./frontend/dist", onFound: markIndexNoCache }));
+app.get("/*", serveStatic({ root: "./frontend/dist", path: "index.html", onFound: markIndexNoCache }));
 
 // Start the Server
 const PORT = 3000;

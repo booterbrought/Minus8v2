@@ -103,7 +103,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
 import { interpolateColor } from '../utils/colorInterpolation';
 import { fetchGameState } from '../services/game';
-import { isTelegram, getWebApp } from '../services/telegram';
+import { isTelegram, getWebApp, tgDetectedVia } from '../services/telegram';
 import ProfilePopup from './ProfilePopup.vue';
 
 const router = useRouter();
@@ -186,14 +186,23 @@ onMounted(async () => {
 
 const handleTelegramLaunch = async () => {
   const app = await getWebApp();
-  if (!app) return;
+  if (!app) {
+    console.warn('Telegram detected but the WebApp SDK is unavailable');
+    return;
+  }
   app.ready();
   app.expand();
   const startParam = app.initDataUnsafe?.start_param;
   if (startParam) gameId.value = startParam;
-  if (!userStore.token && app.initData) {
-    const ok = await telegramLogin(app.initData);
-    if (!ok) return;
+  if (!userStore.token) {
+    if (app.initData) {
+      const ok = await telegramLogin(app.initData);
+      if (!ok) return;
+    } else if (tgDetectedVia() !== 'ua') {
+      // Telegram opened the app but passed no credentials — surface it
+      // instead of leaving a menu that can do nothing.
+      alert('Telegram did not pass login data. Please log in manually.');
+    }
   }
   if (startParam && userStore.token) await acceptChallenge(startParam);
 };
