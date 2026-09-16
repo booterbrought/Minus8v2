@@ -29,8 +29,25 @@ declare global {
   }
 }
 
+// Detect once and memoize: the tgWebApp* launch data lives in the URL
+// fragment, which vue-router drops on the first router.push — a later
+// re-check (e.g. on /game/:id) would falsely report "not Telegram".
+let tgDetected: boolean | null = null;
+
 export function isTelegram(): boolean {
-  return typeof window !== 'undefined' && window.location.hash.includes('tgWebApp');
+  if (tgDetected === null) {
+    tgDetected = detectTelegram();
+  }
+  return tgDetected;
+}
+
+function detectTelegram(): boolean {
+  if (typeof window === 'undefined') return false;
+  // Clients differ in how they pass launch data: in the URL hash, in the query
+  // string, or only through the injected SDK object — check all of them.
+  if (window.location.hash.includes('tgWebApp') || window.location.search.includes('tgWebApp')) return true;
+  if (window.Telegram?.WebApp) return true;
+  return /Telegram/i.test(navigator.userAgent);
 }
 
 let webAppPromise: Promise<TelegramWebApp | null> | null = null;

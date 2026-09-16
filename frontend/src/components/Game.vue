@@ -1,12 +1,8 @@
 <template>
   <div v-if="gameService.gameState.value" class="game">
     <div class="game-header">
-      <h2 v-if="gameService.gameState.value.status === 'waiting'" @click="copyGameId" class="game-id">{{ copyText }}</h2>
-      <button
-        v-if="isTg && botUsername && gameService.gameState.value.status === 'waiting'"
-        @click="challengeFriend"
-        class="challenge-btn"
-      >Challenge a friend</button>
+      <h2 v-if="gameService.gameState.value.status === 'waiting' && !showChallenge" @click="copyGameId" class="game-id">{{ copyText }}</h2>
+      <button v-if="showChallenge" @click="challengeFriend" class="challenge-btn">Challenge a friend</button>
       <ScorePanel :game-state="gameService.gameState.value" @click-player="onClickPlayer" />
     </div>
     <div class="game-board-container">
@@ -46,8 +42,11 @@ const router = useRouter();
 const gameId = route.params.id as string;
 const gameService = new GameService(gameId, await fetchGameState(gameId));
 
-const isTg = isTelegram();
+const isTg = ref(isTelegram());
 const botUsername = ref('');
+const showChallenge = computed(
+  () => isTg.value && !!botUsername.value && gameService.gameState.value?.status === 'waiting',
+);
 
 const copyText = ref('Click to copy invite link');
 const profileUserId = ref<string | null>(null);
@@ -71,14 +70,16 @@ function onClickPlayer(userId: string) {
 
 onMounted(async () => {
   gameService.wsConnect();
-  if (isTg) {
+  if (isTg.value) {
     const app = await getWebApp();
-    app?.ready();
-    app?.expand();
-    try {
-      const res = await fetch('/api/config');
-      if (res.ok) botUsername.value = (await res.json()).botUsername || '';
-    } catch { /* ignore */ }
+    if (app) {
+      app.ready();
+      app.expand();
+      try {
+        const res = await fetch('/api/config');
+        if (res.ok) botUsername.value = (await res.json()).botUsername || '';
+      } catch { /* ignore */ }
+    }
   }
 });
 
