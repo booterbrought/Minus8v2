@@ -194,15 +194,16 @@ const handleTelegramLaunch = async () => {
   app.expand();
   const startParam = app.initDataUnsafe?.start_param;
   if (startParam) gameId.value = startParam;
-  if (!userStore.token) {
-    if (app.initData) {
-      const ok = await telegramLogin(app.initData);
-      if (!ok) return;
-    } else if (tgDetectedVia() !== 'ua') {
-      // Telegram opened the app but passed no credentials — surface it
-      // instead of leaving a menu that can do nothing.
-      alert('Telegram did not pass login data. Please log in manually.');
-    }
+  if (app.initData) {
+    // Telegram identity always wins inside the mini app — it must also
+    // replace a leftover password-account token from an earlier session,
+    // which would otherwise suppress Telegram login forever.
+    const ok = await telegramLogin(app.initData);
+    if (!ok) return;
+  } else if (!userStore.token && tgDetectedVia() !== 'ua') {
+    // Telegram opened the app but passed no credentials — surface it
+    // instead of leaving a menu that can do nothing.
+    alert('Telegram did not pass login data. Please log in manually.');
   }
   if (startParam && userStore.token) await acceptChallenge(startParam);
 };
