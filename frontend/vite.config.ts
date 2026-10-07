@@ -10,6 +10,9 @@ export default defineConfig({
   plugins: [
     vue(),
   ],
+  define: {
+    __BUILD__: JSON.stringify(new Date().toISOString().replace(/[-:T]/g, "").slice(0, 12)),
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

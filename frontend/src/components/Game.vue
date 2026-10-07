@@ -5,6 +5,7 @@
       <button v-if="showChallenge" @click="challengeFriend" class="challenge-btn">Challenge a friend</button>
       <ScorePanel :game-state="gameService.gameState.value" @click-player="onClickPlayer" />
     </div>
+    <div v-if="tgDebug" class="tg-debug">{{ tgDebug }}</div>
     <div class="game-board-container">
       <Board :game-state="gameService.gameState.value" @make-move="(row, col) => gameService.makeMove(row, col)" />
     </div>
@@ -32,7 +33,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Board from './Board.vue';
 import { GameService, fetchGameState } from '../services/game';
-import { isTelegram, getWebApp } from '../services/telegram';
+import { isTelegram, getWebApp, tgDetectedVia } from '../services/telegram';
 import ScorePanel from './ScorePanel.vue';
 import ProfilePopup from './ProfilePopup.vue';
 
@@ -47,6 +48,8 @@ const botUsername = ref('');
 const showChallenge = computed(
   () => isTg.value && !!botUsername.value && gameService.gameState.value?.status === 'waiting',
 );
+// Temporary diagnostic (remove after Telegram Desktop debugging)
+const tgDebug = ref('');
 
 const copyText = ref('Click to copy invite link');
 const profileUserId = ref<string | null>(null);
@@ -70,17 +73,16 @@ function onClickPlayer(userId: string) {
 
 onMounted(async () => {
   gameService.wsConnect();
-  if (isTg.value) {
-    const app = await getWebApp();
-    if (app) {
-      app.ready();
-      app.expand();
-      try {
-        const res = await fetch('/api/config');
-        if (res.ok) botUsername.value = (await res.json()).botUsername || '';
-      } catch { /* ignore */ }
-    }
+  const app = await getWebApp();
+  if (app) {
+    app.ready();
+    app.expand();
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) botUsername.value = (await res.json()).botUsername || '';
+    } catch { /* ignore */ }
   }
+  tgDebug.value = `tg: via=${tgDetectedVia() || 'none'} sdk=${app ? 1 : 0} initData=${app?.initData ? 1 : 0} start=${app?.initDataUnsafe?.start_param ?? '-'} bot=${botUsername.value || '∅'} bundle=${__BUILD__}`;
 });
 
 onUnmounted(() => {
@@ -148,6 +150,10 @@ function fallbackCopyToClipboard(text: string) {
 
 .challenge-btn {
   @apply mb-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors;
+}
+
+.tg-debug {
+  @apply text-[10px] text-gray-500 font-mono mb-2 break-all;
 }
 
 .game {
